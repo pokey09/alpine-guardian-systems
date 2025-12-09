@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 export default function Footer() {
   return (
@@ -8,9 +9,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo and tagline */}
           <div className="flex flex-col items-center md:items-start gap-2">
-            <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-3xl">AGS</span>
-            </div>
+            <img src={logo} alt="Alpine Guardian Systems" className="w-20 h-20" />
             <p className="text-slate-400 text-sm italic">
               "Modern tools for mountain heroes."
             </p>

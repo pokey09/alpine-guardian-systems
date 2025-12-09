@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.png';
 
 export default function HeroSection() {
   const scrollToContact = () => {
@@ -97,9 +98,7 @@ export default function HeroSection() {
           className="mb-8"
         >
           <div className="inline-flex items-center justify-center mb-6">
-            <div className="w-48 h-48 md:w-64 md:h-64 bg-gradient-to-br from-red-600 to-red-700 rounded-3xl flex items-center justify-center shadow-2xl shadow-red-500/20">
-              <span className="text-white font-bold text-7xl md:text-8xl">AGS</span>
-            </div>
+            <img src={logo} alt="Alpine Guardian Systems" className="w-48 h-48 md:w-64 md:h-64 drop-shadow-2xl" />
           </div>
         </motion.div>
 

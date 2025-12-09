@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { LogIn, ShoppingBag, User, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
+import logo from '@/assets/logo.png';
 
 export default function Header() {
   const [user, setUser] = useState(null);
@@ -25,9 +26,7 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <Link to={createPageUrl('Home')} className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm sm:text-base">AGS</span>
-          </div>
+          <img src={logo} alt="Alpine Guardian Systems" className="w-8 h-8 sm:w-10 sm:h-10" />
           <span className="text-white font-bold text-base sm:text-lg hidden sm:inline">Alpine Guardian Systems</span>
         </Link>
 
