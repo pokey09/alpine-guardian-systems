@@ -15,10 +15,11 @@ export default function OrdersManager() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Order')
-        .select('*')
+        .select('id, customer_name, customer_email, items, total, status, created_date')
         .order('created_date', { ascending: false });
       if (error) {
-        throw new Error(error.message);
+        console.error('Error loading orders:', error.message);
+        return [];
       }
       return data;
     },

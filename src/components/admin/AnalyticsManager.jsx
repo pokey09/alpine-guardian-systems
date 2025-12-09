@@ -35,9 +35,10 @@ export default function AnalyticsManager() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Order')
-        .select('*');
+        .select('id, total, status, created_date');
       if (error) {
-        throw new Error(error.message);
+        console.error('Error loading orders:', error.message);
+        return [];
       }
       return data;
     },
