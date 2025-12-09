@@ -153,35 +153,68 @@ export default function Dashboard() {
               className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
             >
               <h2 className="text-xl font-bold text-slate-900 mb-6">Quick Actions</h2>
-              
-              <div className="flex flex-col gap-5">
+
+              <div className="grid gap-4">
                 {isAdmin && (
                   <Link to={createPageUrl('AdminDashboard')} className="block">
-                    <Button className="w-full justify-start bg-slate-900 hover:bg-slate-800 text-white">
-                      Admin Dashboard
-                    </Button>
+                    <div className="group flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 hover:shadow-sm transition">
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                          <Settings className="w-4 h-4" />
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-900">Admin Dashboard</p>
+                          <p className="text-xs text-slate-500">Manage products, users, and orders</p>
+                        </div>
+                      </div>
+                      <span className="text-slate-300 group-hover:text-slate-500">›</span>
+                    </div>
                   </Link>
                 )}
 
                 <Link to={createPageUrl('StoreFront')} className="block">
-                  <Button className="w-full justify-start bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white">
-                    <ShoppingBag className="w-4 h-4 mr-2" />
-                    Browse Store
-                  </Button>
+                  <div className="group flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 hover:shadow-sm transition">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-red-600 text-white">
+                        <ShoppingBag className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-900">Browse Store</p>
+                        <p className="text-xs text-slate-500">Discover new arrivals and deals</p>
+                      </div>
+                    </div>
+                    <span className="text-slate-300 group-hover:text-slate-500">›</span>
+                  </div>
                 </Link>
 
                 <Link to={createPageUrl('OrderHistory')} className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Package className="w-4 h-4 mr-2" />
-                    View Orders
-                  </Button>
+                  <div className="group flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 hover:shadow-sm transition">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                        <Package className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-900">View Orders</p>
+                        <p className="text-xs text-slate-500">Track your past and current orders</p>
+                      </div>
+                    </div>
+                    <span className="text-slate-300 group-hover:text-slate-500">›</span>
+                  </div>
                 </Link>
 
                 <Link to={createPageUrl('UserProfile')} className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
+                  <div className="group flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 hover:shadow-sm transition">
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                        <Settings className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <p className="font-semibold text-slate-900">Edit Profile</p>
+                        <p className="text-xs text-slate-500">Update your details and preferences</p>
+                      </div>
+                    </div>
+                    <span className="text-slate-300 group-hover:text-slate-500">›</span>
+                  </div>
                 </Link>
               </div>
             </motion.div>
