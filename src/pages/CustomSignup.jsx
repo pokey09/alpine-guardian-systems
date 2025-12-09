@@ -48,7 +48,24 @@ export default function CustomSignup() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
+    } else if (data.user) {
+      // Create Account record (in case trigger isn't set up)
+      const { error: accountError } = await supabase
+        .from('Account')
+        .insert({
+          id: data.user.id,
+          email: formData.email,
+          full_name: formData.fullName,
+          role: 'user',
+        })
+        .select()
+        .single();
+
+      // Ignore conflict errors (trigger already created the record)
+      if (accountError && !accountError.message.includes('duplicate')) {
+        console.error('Error creating account:', accountError);
+      }
+
       // Show success message instead of redirecting
       setSignupSuccess(true);
       setLoading(false);

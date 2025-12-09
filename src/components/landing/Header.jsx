@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LogIn, ShoppingBag, User, Menu, X, UserCircle } from 'lucide-react';
+import { LogIn, ShoppingBag, User, Menu, X, UserCircle, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import logo from '@/assets/logo.png';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function Header() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -46,6 +46,17 @@ export default function Header() {
                   Orders
                 </Button>
               </Link>
+              {isAdmin && (
+                <Link to={createPageUrl('AdminDashboard')}>
+                  <Button
+                    variant="ghost"
+                    className="text-yellow-400 hover:bg-white/10 hover:text-yellow-300"
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
               <Link to={createPageUrl('Dashboard')}>
                 <Button
                   variant="outline"
@@ -108,6 +119,17 @@ export default function Header() {
                       Orders
                     </Button>
                   </Link>
+                  {isAdmin && (
+                    <Link to={createPageUrl('AdminDashboard')} onClick={() => setMobileMenuOpen(false)}>
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start text-yellow-400 hover:bg-white/10 hover:text-yellow-300"
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
                   <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}>
                     <Button
                       variant="ghost"

@@ -6,22 +6,59 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchUserRole = async (userId) => {
+    if (!userId) {
+      setUserRole(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('Account')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (!error && data) {
+        setUserRole(data.role);
+      } else {
+        setUserRole('user'); // Default to user if no role found
+      }
+    } catch (err) {
+      console.error('Error fetching user role:', err);
+      setUserRole('user');
+    }
+  };
 
   useEffect(() => {
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
+
+      if (session?.user) {
+        await fetchUserRole(session.user.id);
+      }
+
       setLoading(false);
     };
 
     getSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
+        } else {
+          setUserRole(null);
+        }
+
         setLoading(false);
       }
     );
@@ -34,6 +71,8 @@ export const AuthProvider = ({ children }) => {
   const value = {
     session,
     user,
+    userRole,
+    isAdmin: userRole === 'admin',
     signOut: () => supabase.auth.signOut(),
   };
 

@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { LogOut, Package, Users, Settings, BarChart3, ShoppingCart, Star } from 'lucide-react';
+import { LogOut, Package, Users, Settings, BarChart3, ShoppingCart, Star, ShieldAlert } from 'lucide-react';
 import { createPageUrl } from '../utils';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
 import ProductsManager from '../components/admin/ProductsManager';
 import UsersManager from '../components/admin/UsersManager';
 import SiteSettingsManager from '../components/admin/SiteSettingsManager';
@@ -11,23 +13,37 @@ import OrdersManager from '../components/admin/OrdersManager';
 import ReviewsManager from '../components/admin/ReviewsManager';
 
 export default function AdminDashboard() {
-  const [user, setUser] = useState(null);
+  const { user, isAdmin, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
-      window.location.href = createPageUrl('CustomLogin');
-      return;
+    if (!user) {
+      navigate(createPageUrl('CustomLogin'));
+    } else if (isAdmin === false) {
+      // User is logged in but not an admin
+      navigate(createPageUrl('Dashboard'));
     }
-    setUser(JSON.parse(currentUser));
-  }, []);
+  }, [user, isAdmin, navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    window.location.href = createPageUrl('Home');
+  const handleLogout = async () => {
+    await signOut();
+    navigate(createPageUrl('Home'));
   };
 
-  if (!user) return null;
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <ShieldAlert className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h1>
+          <p className="text-slate-600 mb-4">You need administrator privileges to access this page.</p>
+          <Button onClick={() => navigate(createPageUrl('Dashboard'))}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -52,7 +68,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-slate-900">Welcome, {user.full_name}</h2>
+          <h2 className="text-3xl font-bold text-slate-900">Welcome, {user.user_metadata?.full_name || user.email}</h2>
           <p className="text-slate-600 mt-1">Manage your site content and users</p>
         </div>
 
