@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { LogOut, Package, Users, Settings, BarChart3, ShoppingCart, Star, ShieldAlert } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { createPageUrl } from '../utils';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
@@ -63,9 +64,7 @@ export default function AdminDashboard() {
       <nav className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">AGS</span>
-            </div>
+            <img src={logo} alt="Alpine Guardian Systems" className="w-12 h-12 rounded-lg border border-slate-100" />
             <h1 className="text-xl font-bold text-slate-900">Admin Dashboard</h1>
           </div>
           <Button
@@ -103,15 +102,11 @@ export default function AdminDashboard() {
               <Users className="w-4 h-4" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Reviews
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Site Settings
-            </TabsTrigger>
-          </TabsList>
+          <TabsTrigger value="reviews" className="flex items-center gap-2">
+            <Star className="w-4 h-4" />
+            Reviews
+          </TabsTrigger>
+        </TabsList>
 
           <TabsContent value="analytics">
             <AnalyticsManager />
@@ -133,11 +128,8 @@ export default function AdminDashboard() {
             <ReviewsManager />
           </TabsContent>
 
-          <TabsContent value="settings">
-            <SiteSettingsManager />
-          </TabsContent>
-        </Tabs>
-      </div>
+      </Tabs>
+    </div>
     </div>
   );
 }
