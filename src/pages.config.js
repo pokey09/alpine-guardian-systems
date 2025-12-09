@@ -23,7 +23,6 @@ export const PAGES = {
     "ProductDetail": ProductDetail,
     "OrderHistory": OrderHistory,
     "OrderDetails": OrderDetails,
-    "UserDashboard": UserDashboard,
 }
 
 export const pagesConfig = {
