@@ -8,10 +8,38 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [accountTableExists, setAccountTableExists] = useState(true);
+
+  const checkTableExists = async () => {
+    try {
+      // Try a simple query to check if table exists
+      const { error } = await supabase
+        .from('Account')
+        .select('id')
+        .limit(1);
+
+      if (error && (error.code === 'PGRST116' || error.message.includes('500') || error.message.includes('relation') || error.message.includes('does not exist'))) {
+        console.warn('⚠️ Account table does not exist. Run supabase-role-migration.sql to enable admin roles.');
+        setAccountTableExists(false);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn('⚠️ Account table check failed. Disabling role checks.');
+      setAccountTableExists(false);
+      return false;
+    }
+  };
 
   const fetchUserRole = async (userId) => {
     if (!userId) {
       setUserRole(null);
+      return;
+    }
+
+    // Skip fetching if table doesn't exist
+    if (!accountTableExists) {
+      setUserRole('user');
       return;
     }
 
@@ -23,9 +51,9 @@ export const AuthProvider = ({ children }) => {
         .maybeSingle();
 
       if (error) {
-        // Check if it's a 500 error (table doesn't exist)
+        // Table might have been deleted
         if (error.code === 'PGRST116' || error.message.includes('500')) {
-          console.warn('Account table does not exist. Please run the migration SQL. Defaulting to "user" role.');
+          setAccountTableExists(false);
           setUserRole('user');
           return;
         }
@@ -39,7 +67,6 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       // Table might not exist yet - default to user role
-      console.warn('Error fetching user role:', err.message);
       setUserRole('user');
     }
   };
@@ -47,6 +74,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const getSession = async () => {
       try {
+        // Check if Account table exists first
+        await checkTableExists();
+
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
@@ -58,6 +88,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Error getting session:', error);
+        setUserRole('user'); // Default on error
       } finally {
         setLoading(false);
       }
