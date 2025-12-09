@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, User, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { supabase } from '@/lib/supabaseClient';
@@ -17,6 +17,7 @@ export default function CustomSignup() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,9 +48,9 @@ export default function CustomSignup() {
       setError(error.message);
       setLoading(false);
     } else {
-      // Redirect or show a success message
-      // To maintain original behavior, we redirect to dashboard
-      window.location.href = createPageUrl('Dashboard');
+      // Show success message instead of redirecting
+      setSignupSuccess(true);
+      setLoading(false);
     }
   };
 
@@ -89,21 +90,45 @@ export default function CustomSignup() {
         <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69386993c4c28da2d1fc07c3/6b5bc90fc_AdobeExpress-file.png" 
-              alt="Alpine Guardian Systems"
-              className="w-20 h-20 object-contain"
-            />
+            <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center">
+              <span className="text-white font-bold text-3xl">AGS</span>
+            </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-slate-900 text-center mb-2">Create account</h1>
-          <p className="text-slate-500 text-center mb-8">Join Alpine Guardian Systems</p>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-              {error}
+          {signupSuccess ? (
+            // Success message
+            <div className="text-center">
+              <div className="flex justify-center mb-4">
+                <CheckCircle className="w-16 h-16 text-green-600" />
+              </div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Check your email</h1>
+              <p className="text-slate-600 mb-6">
+                We've sent a verification link to <strong>{formData.email}</strong>
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <p className="text-blue-800 text-sm">
+                  Please verify your email address before signing in. Check your inbox and click the verification link.
+                </p>
+              </div>
+              <Link
+                to={createPageUrl('CustomLogin')}
+                className="inline-block"
+              >
+                <Button className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white">
+                  Go to Sign In
+                </Button>
+              </Link>
             </div>
-          )}
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-slate-900 text-center mb-2">Create account</h1>
+              <p className="text-slate-500 text-center mb-8">Join Alpine Guardian Systems</p>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
@@ -180,26 +205,28 @@ export default function CustomSignup() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-slate-600">
-              Already have an account?{' '}
-              <Link 
-                to={createPageUrl('CustomLogin')} 
-                className="text-red-600 hover:text-red-700 font-medium"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
+              <div className="mt-6 text-center">
+                <p className="text-slate-600">
+                  Already have an account?{' '}
+                  <Link
+                    to={createPageUrl('CustomLogin')}
+                    className="text-red-600 hover:text-red-700 font-medium"
+                  >
+                    Sign in
+                  </Link>
+                </p>
+              </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-            <Link 
-              to={createPageUrl('Home')} 
-              className="text-slate-500 hover:text-slate-700 text-sm"
-            >
-              ← Back to home
-            </Link>
-          </div>
+              <div className="mt-6 pt-6 border-t border-slate-200 text-center">
+                <Link
+                  to={createPageUrl('Home')}
+                  className="text-slate-500 hover:text-slate-700 text-sm"
+                >
+                  ← Back to home
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
     </div>

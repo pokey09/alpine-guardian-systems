@@ -8,11 +8,9 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo and tagline */}
           <div className="flex flex-col items-center md:items-start gap-2">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69386993c4c28da2d1fc07c3/6b5bc90fc_AdobeExpress-file.png" 
-              alt="Alpine Guardian Systems"
-              className="w-20 h-20 object-contain"
-            />
+            <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center">
+              <span className="text-white font-bold text-3xl">AGS</span>
+            </div>
             <p className="text-slate-400 text-sm italic">
               "Modern tools for mountain heroes."
             </p>

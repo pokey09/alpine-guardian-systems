@@ -51,11 +51,9 @@ export default function ResetPassword() {
       >
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10">
           <div className="flex justify-center mb-4 sm:mb-6">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69386993c4c28da2d1fc07c3/6b5bc90fc_AdobeExpress-file.png" 
-              alt="Alpine Guardian Systems"
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
-            />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center">
+              <span className="text-white font-bold text-2xl sm:text-3xl">AGS</span>
+            </div>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-2">Reset Password</h1>

@@ -25,11 +25,9 @@ export default function Header() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <Link to={createPageUrl('Home')} className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity">
-          <img 
-            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69386993c4c28da2d1fc07c3/6b5bc90fc_AdobeExpress-file.png" 
-            alt="Alpine Guardian Systems"
-            className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
-          />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm sm:text-base">AGS</span>
+          </div>
           <span className="text-white font-bold text-base sm:text-lg hidden sm:inline">Alpine Guardian Systems</span>
         </Link>
 

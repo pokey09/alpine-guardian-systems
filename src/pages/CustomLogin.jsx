@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { supabase } from '@/lib/supabaseClient';
@@ -13,10 +13,31 @@ export default function CustomLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
+
+  const handleResendVerification = async () => {
+    setResendingEmail(true);
+    setError('');
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setError('Verification email sent! Please check your inbox.');
+    }
+
+    setResendingEmail(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setNeedsVerification(false);
     setLoading(true);
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -27,7 +48,13 @@ export default function CustomLogin() {
     if (error) {
       setError(error.message);
       setLoading(false);
+    } else if (data.user && !data.user.email_confirmed_at) {
+      // Email is not verified
+      setNeedsVerification(true);
+      setLoading(false);
+      await supabase.auth.signOut();
     } else {
+      // Email is verified, proceed to dashboard
       window.location.href = createPageUrl('Dashboard');
     }
   };
@@ -68,18 +95,44 @@ export default function CustomLogin() {
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10">
           {/* Logo */}
           <div className="flex justify-center mb-4 sm:mb-6">
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/69386993c4c28da2d1fc07c3/6b5bc90fc_AdobeExpress-file.png" 
-              alt="Alpine Guardian Systems"
-              className="w-16 h-16 sm:w-20 sm:h-20 object-contain"
-            />
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center">
+              <span className="text-white font-bold text-2xl sm:text-3xl">AGS</span>
+            </div>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-2">Welcome back</h1>
           <p className="text-sm sm:text-base text-slate-500 text-center mb-6 sm:mb-8">Sign in to your account</p>
 
+          {needsVerification && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-yellow-900 font-semibold text-sm mb-1">
+                    Please verify your email
+                  </h3>
+                  <p className="text-yellow-700 text-sm mb-3">
+                    You need to verify your email address before you can sign in. Check your inbox for a verification link.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={resendingEmail}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white text-sm h-9 px-4 rounded-lg"
+                  >
+                    {resendingEmail ? 'Sending...' : 'Resend verification email'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+            <div className={`mb-6 p-4 rounded-xl text-sm ${
+              error.includes('sent')
+                ? 'bg-green-50 border border-green-200 text-green-700'
+                : 'bg-red-50 border border-red-200 text-red-600'
+            }`}>
               {error}
             </div>
           )}
