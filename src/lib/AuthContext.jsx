@@ -16,10 +16,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user ?? null);
-        setUserRole(deriveRole(session?.user));
+        // Refresh to pull latest JWT claims/metadata (e.g., if role was changed server-side)
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          console.warn('Session refresh failed, falling back to existing session:', refreshError.message);
+        }
+
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const sessionToUse = refreshData?.session || currentSession;
+
+        setSession(sessionToUse);
+        setUser(sessionToUse?.user ?? null);
+        setUserRole(deriveRole(sessionToUse?.user));
       } catch (error) {
         console.error('Error getting session:', error);
         setUserRole('user'); // Default on error

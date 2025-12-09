@@ -89,6 +89,32 @@ SELECT
 FROM auth.users u
 ON CONFLICT (id) DO NOTHING;
 
+-- 7) Admin helper to list auth.users without exposing service role key
+--    Uses JWT claim 'role' === 'admin'
+CREATE OR REPLACE FUNCTION public.admin_list_auth_users()
+RETURNS TABLE (
+    id UUID,
+    email TEXT,
+    full_name TEXT,
+    role TEXT,
+    created_at TIMESTAMPTZ
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT
+        u.id,
+        u.email,
+        COALESCE(u.raw_user_meta_data->>'full_name', '') AS full_name,
+        COALESCE(u.raw_user_meta_data->>'role', 'user') AS role,
+        u.created_at
+    FROM auth.users u
+    WHERE (auth.jwt() ->> 'role') = 'admin';
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_list_auth_users() TO authenticated;
+
 -- 6) Final message
 DO $$
 BEGIN

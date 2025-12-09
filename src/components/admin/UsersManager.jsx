@@ -1,43 +1,22 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { User, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 
 export default function UsersManager() {
-  const { adminClient, serviceRoleLoaded } = useMemo(() => {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !serviceRoleKey) {
-      return { adminClient: null, serviceRoleLoaded: !!serviceRoleKey };
-    }
-    return { adminClient: createClient(url, serviceRoleKey), serviceRoleLoaded: true };
-  }, []);
-
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['auth-users'],
     queryFn: async () => {
-      if (!adminClient) {
-        throw new Error('Service role key not configured; cannot read auth.users from the client.');
-      }
-      const { data, error } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 200 });
+      const { data, error } = await supabase.rpc('admin_list_auth_users');
       if (error) {
         throw new Error(error.message);
       }
-      return data?.users || [];
+      return data || [];
     },
-    enabled: !!adminClient,
   });
-
-  if (!serviceRoleLoaded) {
-    return (
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
-        To manage users from `auth.users`, set `VITE_SUPABASE_SERVICE_ROLE_KEY` (only in secure/server context). Service role is required to list users.
-      </div>
-    );
-  }
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div className="text-red-600">Error loading users: {error.message}</div>;
