@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ProductsManager() {
   const [editingProduct, setEditingProduct] = useState(null);
@@ -15,6 +17,8 @@ export default function ProductsManager() {
     price: '',
     image: '',
     description: '',
+    is_subscription: false,
+    subscription_interval: '',
     rating: 5,
   });
 
@@ -82,7 +86,7 @@ export default function ProductsManager() {
   });
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', image: '', description: '', rating: 5 });
+    setFormData({ name: '', price: '', image: '', description: '', is_subscription: false, subscription_interval: '', rating: 5 });
     setEditingProduct(null);
     setShowForm(false);
   };
@@ -94,6 +98,8 @@ export default function ProductsManager() {
       price: product.price,
       image: product.image || '',
       description: product.description,
+       is_subscription: product.is_subscription || false,
+       subscription_interval: product.subscription_interval || '',
       rating: product.rating,
     });
     setShowForm(true);
@@ -105,6 +111,7 @@ export default function ProductsManager() {
       ...formData,
       price: parseFloat(formData.price),
       rating: parseInt(formData.rating),
+      subscription_interval: formData.is_subscription ? formData.subscription_interval || null : null,
     };
 
     if (editingProduct) {
@@ -170,6 +177,33 @@ export default function ProductsManager() {
                 required
               />
             </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-center space-x-3">
+                <Checkbox
+                  id="is_subscription"
+                  checked={formData.is_subscription}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_subscription: !!checked })}
+                />
+                <Label htmlFor="is_subscription" className="mt-0">Subscription product</Label>
+              </div>
+              <div>
+                <Label>Subscription Interval</Label>
+                <Select
+                  value={formData.subscription_interval}
+                  onValueChange={(val) => setFormData({ ...formData, subscription_interval: val })}
+                  disabled={!formData.is_subscription}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose interval" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
               <Label>Rating (1-5)</Label>
               <Input
@@ -196,7 +230,14 @@ export default function ProductsManager() {
             <div className="flex-1">
               <h3 className="font-semibold text-slate-900">{product.name}</h3>
               <p className="text-slate-600 text-sm">{product.description}</p>
-              <p className="text-red-600 font-bold mt-1">${product.price}</p>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-red-600 font-bold">${product.price}</p>
+                {product.is_subscription && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                    {product.subscription_interval || 'subscription'}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
               <Button onClick={() => handleEdit(product)} variant="outline" size="sm">

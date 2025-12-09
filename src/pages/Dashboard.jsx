@@ -154,30 +154,30 @@ export default function Dashboard() {
             >
               <h2 className="text-xl font-bold text-slate-900 mb-6">Quick Actions</h2>
               
-              <div className="space-y-50">
+              <div className="flex flex-col gap-5">
                 {isAdmin && (
-                  <Link to={createPageUrl('AdminDashboard')}>
+                  <Link to={createPageUrl('AdminDashboard')} className="block">
                     <Button className="w-full justify-start bg-slate-900 hover:bg-slate-800 text-white">
                       Admin Dashboard
                     </Button>
                   </Link>
                 )}
 
-                <Link to={createPageUrl('StoreFront')}>
+                <Link to={createPageUrl('StoreFront')} className="block">
                   <Button className="w-full justify-start bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white">
                     <ShoppingBag className="w-4 h-4 mr-2" />
                     Browse Store
                   </Button>
                 </Link>
 
-                <Link to={createPageUrl('OrderHistory')}>
+                <Link to={createPageUrl('OrderHistory')} className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <Package className="w-4 h-4 mr-2" />
                     View Orders
                   </Button>
                 </Link>
 
-                <Link to={createPageUrl('UserProfile')}>
+                <Link to={createPageUrl('UserProfile')} className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <Settings className="w-4 h-4 mr-2" />
                     Edit Profile
