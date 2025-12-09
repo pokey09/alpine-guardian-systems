@@ -12,7 +12,7 @@ export default function AnalyticsManager() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Product')
-        .select('*');
+        .select('id,name,price');
       if (error) {
         throw new Error(error.message);
       }

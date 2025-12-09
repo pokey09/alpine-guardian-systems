@@ -26,7 +26,7 @@ export default function ProductDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Product')
-        .select('*')
+        .select('id,name,price,image,description,rating,variations')
         .eq('id', productId)
         .single();
       if (error) {

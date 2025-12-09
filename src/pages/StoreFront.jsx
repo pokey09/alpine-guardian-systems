@@ -56,7 +56,7 @@ export default function StoreFront() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Product')
-        .select('*');
+        .select('id,name,price,image,description,rating,variations');
       if (error) {
         throw new Error(error.message);
       }
