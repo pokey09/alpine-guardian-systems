@@ -13,12 +13,15 @@ import OrdersManager from '../components/admin/OrdersManager';
 import ReviewsManager from '../components/admin/ReviewsManager';
 
 export default function AdminDashboard() {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, accountTableExists, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Don't redirect while still loading
     if (loading) return;
+
+    // If the Account table is missing, keep the user here to show instructions
+    if (accountTableExists === false) return;
 
     if (!user) {
       navigate(createPageUrl('CustomLogin'));
@@ -26,7 +29,7 @@ export default function AdminDashboard() {
       // User is logged in but not an admin
       navigate(createPageUrl('Dashboard'));
     }
-  }, [user, isAdmin, loading, navigate]);
+  }, [user, isAdmin, accountTableExists, loading, navigate]);
 
   const handleLogout = async () => {
     await signOut();
@@ -38,6 +41,35 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-red-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Show setup help if Account table is missing
+  if (accountTableExists === false) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white border border-amber-200 text-amber-800 p-6 rounded-2xl shadow-sm max-w-lg w-full">
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Account table missing</h1>
+          <p className="text-slate-700 mb-4">
+            Run `supabase-role-migration.sql` in the Supabase SQL Editor to create the Account table and roles,
+            then set your admin account's role to <code>admin</code>.
+          </p>
+          <div className="space-y-2 text-sm text-slate-600">
+            <p>After running the SQL:</p>
+            <code className="block bg-slate-100 text-slate-800 px-3 py-2 rounded">
+              UPDATE public."Account" SET role = 'admin' WHERE email = 'you@example.com';
+            </code>
+          </div>
+          <div className="mt-4 flex gap-3">
+            <Button onClick={() => navigate(createPageUrl('Dashboard'))} variant="outline">
+              Back to Dashboard
+            </Button>
+            <Button onClick={() => navigate(createPageUrl('Home'))} className="bg-red-600 hover:bg-red-700">
+              Home
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
