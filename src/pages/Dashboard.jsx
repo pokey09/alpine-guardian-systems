@@ -155,23 +155,6 @@ export default function Dashboard() {
               <h2 className="text-xl font-bold text-slate-900 mb-6">Quick Actions</h2>
 
               <div className="grid gap-4">
-                {isAdmin && (
-                  <Link to={createPageUrl('AdminDashboard')} className="block">
-                    <div className="group flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 hover:shadow-sm transition">
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
-                          <Settings className="w-4 h-4" />
-                        </span>
-                        <div>
-                          <p className="font-semibold text-slate-900">Admin Dashboard</p>
-                          <p className="text-xs text-slate-500">Manage products, users, and orders</p>
-                        </div>
-                      </div>
-                      <span className="text-slate-300 group-hover:text-slate-500">›</span>
-                    </div>
-                  </Link>
-                )}
-
                 <Link to={createPageUrl('StoreFront')} className="block">
                   <div className="group flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 hover:border-slate-300 hover:shadow-sm transition">
                     <div className="flex items-center gap-3">
