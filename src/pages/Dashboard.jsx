@@ -7,7 +7,7 @@ import { createPageUrl } from '../utils';
 import Header from '../components/landing/Header';
 import Footer from '../components/landing/Footer';
 
-export default function UserDashboard() {
+export default function Dashboard() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
