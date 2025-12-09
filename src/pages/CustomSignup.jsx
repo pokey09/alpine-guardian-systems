@@ -7,6 +7,7 @@ import { Mail, Lock, User, UserPlus, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { supabase } from '@/lib/supabaseClient';
+import logo from '@/assets/logo.png';
 
 export default function CustomSignup() {
   const [formData, setFormData] = useState({
@@ -90,9 +91,7 @@ export default function CustomSignup() {
         <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-3xl">AGS</span>
-            </div>
+            <img src={logo} alt="Alpine Guardian Systems" className="w-20 h-20" />
           </div>
 
           {signupSuccess ? (

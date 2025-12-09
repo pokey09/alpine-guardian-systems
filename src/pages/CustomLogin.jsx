@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { supabase } from '@/lib/supabaseClient';
+import logo from '@/assets/logo.png';
 
 export default function CustomLogin() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -55,7 +57,7 @@ export default function CustomLogin() {
       await supabase.auth.signOut();
     } else {
       // Email is verified, proceed to dashboard
-      window.location.href = createPageUrl('Dashboard');
+      navigate(createPageUrl('Dashboard'));
     }
   };
 
@@ -95,9 +97,7 @@ export default function CustomLogin() {
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-10">
           {/* Logo */}
           <div className="flex justify-center mb-4 sm:mb-6">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-red-600 to-red-700 rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-2xl sm:text-3xl">AGS</span>
-            </div>
+            <img src={logo} alt="Alpine Guardian Systems" className="w-16 h-16 sm:w-20 sm:h-20" />
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 text-center mb-2">Welcome back</h1>
