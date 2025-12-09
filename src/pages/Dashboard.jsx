@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, ShieldCheck } from 'lucide-react';
+import { User, ShoppingBag, Package, LogOut, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import Header from '../components/landing/Header';
+import Footer from '../components/landing/Footer';
 
-export default function Dashboard() {
+export default function UserDashboard() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -16,6 +19,9 @@ export default function Dashboard() {
     setUser(JSON.parse(currentUser));
   }, []);
 
+  // TODO: Implement API client to fetch orders
+  const orders = [];
+
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     window.location.href = createPageUrl('Home');
@@ -23,76 +29,160 @@ export default function Dashboard() {
 
   if (!user) return null;
 
+  const stats = [
+    { label: 'Total Orders', value: orders.length, icon: Package },
+    { label: 'Pending', value: orders.filter(o => o.status === 'pending').length, icon: ShoppingBag },
+    { label: 'Completed', value: orders.filter(o => o.status === 'completed').length, icon: Package },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <nav className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">AGS</span>
-            </div>
-            <h1 className="text-xl font-bold text-slate-900">Alpine Guardian Systems</h1>
-          </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="text-slate-600 hover:text-red-600"
+    <div className="min-h-screen bg-slate-50">
+      <Header />
+      
+      <div className="pt-20 sm:pt-24 pb-12 sm:pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          {/* Welcome Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-8"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
-          </Button>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center">
-              <User className="w-8 h-8 text-white" />
+            <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {user.full_name}!</h1>
+                  <p className="text-white/90 text-sm sm:text-base">{user.email}</p>
+                </div>
+                <Button
+                  onClick={handleLogout}
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Welcome back, {user.full_name}!</h2>
-              <p className="text-slate-500">{user.email}</p>
-            </div>
-          </div>
-          
-          <div className="border-t border-slate-200 pt-6">
-            <p className="text-slate-600 text-lg">
-              Your dashboard is ready. This is where you'll manage your patrol operations.
-            </p>
-          </div>
-        </div>
+          </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="font-semibold text-slate-900 mb-2">Incidents</h3>
-            <p className="text-slate-600 text-sm">Track and manage incidents</p>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-600 text-sm mb-1">{stat.label}</p>
+                    <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
+                    <stat.icon className="w-6 h-6 text-red-600" />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="font-semibold text-slate-900 mb-2">Coordination</h3>
-            <p className="text-slate-600 text-sm">Real-time team coordination</p>
-          </div>
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="font-semibold text-slate-900 mb-2">Reports</h3>
-            <p className="text-slate-600 text-sm">View and generate reports</p>
-          </div>
-        </div>
 
-        <div className="mt-8 bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-6 text-white">
-          <div className="flex items-center gap-4">
-            <ShieldCheck className="w-12 h-12" />
-            <div className="flex-1">
-              <h3 className="text-xl font-bold mb-1">Admin Access</h3>
-              <p className="text-red-100">Manage products, users, and site settings</p>
-            </div>
-            <Link to={createPageUrl('AdminDashboard')}>
-              <Button variant="outline" className="bg-white text-red-600 hover:bg-red-50 border-0">
-                Go to Admin
-              </Button>
-            </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Recent Orders */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="lg:col-span-2 bg-white rounded-xl p-6 shadow-lg border border-slate-200"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Recent Orders</h2>
+                <Link to={createPageUrl('OrderHistory')}>
+                  <Button variant="ghost" size="sm">View All</Button>
+                </Link>
+              </div>
+
+              {orders.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-600">No orders yet</p>
+                  <Link to={createPageUrl('StoreFront')}>
+                    <Button className="mt-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600">
+                      Start Shopping
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {orders.map((order) => (
+                    <Link
+                      key={order.id}
+                      to={`${createPageUrl('OrderDetails')}?id=${order.id}`}
+                      className="block p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-slate-900">Order #{order.id.slice(0, 8)}</p>
+                          <p className="text-sm text-slate-600">
+                            {new Date(order.created_date).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-slate-900">${order.total.toFixed(2)}</p>
+                          <span className={`inline-block text-xs px-2 py-1 rounded-full ${
+                            order.status === 'completed' ? 'bg-green-100 text-green-700' :
+                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+
+            {/* Quick Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
+            >
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Quick Actions</h2>
+              
+              <div className="space-y-3">
+                <Link to={createPageUrl('StoreFront')}>
+                  <Button className="w-full justify-start bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white">
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Browse Store
+                  </Button>
+                </Link>
+
+                <Link to={createPageUrl('OrderHistory')}>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Package className="w-4 h-4 mr-2" />
+                    View Orders
+                  </Button>
+                </Link>
+
+                <Link to={createPageUrl('UserProfile')}>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
