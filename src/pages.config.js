@@ -9,8 +9,7 @@ import UserProfile from './pages/UserProfile';
 import ProductDetail from './pages/ProductDetail';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetails from './pages/OrderDetails';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
+import UserDashboard from './pages/UserDashboard';
 
 
 export const PAGES = {
@@ -25,8 +24,7 @@ export const PAGES = {
     "ProductDetail": ProductDetail,
     "OrderHistory": OrderHistory,
     "OrderDetails": OrderDetails,
-    "ForgotPassword": ForgotPassword,
-    "ResetPassword": ResetPassword,
+    "UserDashboard": UserDashboard,
 }
 
 export const pagesConfig = {
