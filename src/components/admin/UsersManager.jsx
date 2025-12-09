@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import { User, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function UsersManager() {
+  const { accountTableExists } = useAuth();
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
@@ -18,7 +21,16 @@ export default function UsersManager() {
       }
       return data;
     },
+    enabled: accountTableExists,
   });
+
+  if (!accountTableExists) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
+        Account table is missing. Run the Supabase SQL file `supabase-role-migration.sql` to manage users.
+      </div>
+    );
+  }
 
   if (isLoading) return <div>Loading...</div>;
 

@@ -11,7 +11,7 @@ import Header from '../components/landing/Header';
 import Footer from '../components/landing/Footer';
 
 export default function UserProfile() {
-  const { user } = useAuth();
+  const { user, accountTableExists } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', email: '' });
 
@@ -43,6 +43,9 @@ export default function UserProfile() {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
+      if (!accountTableExists) {
+        throw new Error('Account table is missing.');
+      }
       const { data: updatedData, error } = await supabase
         .from('Account')
         .update(data)
@@ -52,7 +55,7 @@ export default function UserProfile() {
       }
       return updatedData;
     },
-    onSuccess: (updatedUser) => {
+    onSuccess: () => {
       setIsEditing(false);
       queryClient.invalidateQueries();
     },
@@ -95,7 +98,7 @@ export default function UserProfile() {
             <div className="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-slate-900">Account Details</h2>
-                {!isEditing && (
+                {!isEditing && accountTableExists && (
                   <Button
                     onClick={() => setIsEditing(true)}
                     variant="outline"
@@ -112,6 +115,12 @@ export default function UserProfile() {
                   <User className="w-12 h-12 text-white" />
                 </div>
               </div>
+
+              {!accountTableExists && (
+                <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-3">
+                  Account table is missing. Run `supabase-role-migration.sql` in Supabase SQL Editor to enable profile updates.
+                </div>
+              )}
 
               {isEditing ? (
                 <div className="space-y-4">

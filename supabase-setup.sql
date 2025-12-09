@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public."Account" (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT,
     email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     created_date TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -24,13 +25,49 @@ DROP POLICY IF EXISTS "Users can view their own account" ON public."Account";
 CREATE POLICY "Users can view their own account" ON public."Account"
     FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Admins can view all accounts" ON public."Account";
+CREATE POLICY "Admins can view all accounts" ON public."Account"
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
+        )
+    );
+
 DROP POLICY IF EXISTS "Users can update their own account" ON public."Account";
 CREATE POLICY "Users can update their own account" ON public."Account"
     FOR UPDATE USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Admins can update any account" ON public."Account";
+CREATE POLICY "Admins can update any account" ON public."Account"
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
+        )
+    );
+
 DROP POLICY IF EXISTS "Anyone can create an account" ON public."Account";
 CREATE POLICY "Anyone can create an account" ON public."Account"
     FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can delete accounts" ON public."Account";
+CREATE POLICY "Admins can delete accounts" ON public."Account"
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
+        )
+    );
+
+-- Useful index for role lookups
+CREATE INDEX IF NOT EXISTS idx_account_role ON public."Account"(role);
 
 -- ============================================================================
 -- 2. PRODUCT TABLE

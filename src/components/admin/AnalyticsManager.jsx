@@ -2,8 +2,11 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Users, Package, ShoppingCart, TrendingUp } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function AnalyticsManager() {
+  const { accountTableExists } = useAuth();
+
   const { data: users = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: async () => {
@@ -15,6 +18,7 @@ export default function AnalyticsManager() {
       }
       return data;
     },
+    enabled: accountTableExists,
   });
 
   const { data: products = [] } = useQuery({
@@ -76,6 +80,14 @@ export default function AnalyticsManager() {
       bgColor: 'bg-purple-50',
     },
   ];
+
+  if (!accountTableExists) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
+        Account table is missing. Run the Supabase SQL file `supabase-role-migration.sql` to enable admin analytics.
+      </div>
+    );
+  }
 
   return (
     <div>

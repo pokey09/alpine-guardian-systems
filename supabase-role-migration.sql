@@ -1,122 +1,98 @@
--- Add role column to Account table
--- Run this in your Supabase SQL Editor
+-- Alpine Guardian Systems - Role Migration
+-- Run this in Supabase SQL Editor to create/fix the Account table with roles
 
--- Add role column with default value 'user'
-ALTER TABLE public."Account"
-ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'user'
-CHECK (role IN ('user', 'admin'));
+-- Ensure UUID helpers exist
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create index for faster role queries
-CREATE INDEX IF NOT EXISTS idx_account_role ON public."Account"(role);
+-- 1) Create the Account table if it does not already exist
+CREATE TABLE IF NOT EXISTS public."Account" (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name TEXT,
+    email TEXT UNIQUE NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    created_date TIMESTAMPTZ DEFAULT NOW()
+);
 
--- Update RLS policies to allow admins full access
+-- 2) Make sure required columns/constraints are present for existing tables
+ALTER TABLE public."Account" ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public."Account" ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public."Account" ADD COLUMN IF NOT EXISTS role TEXT;
+ALTER TABLE public."Account" ADD COLUMN IF NOT EXISTS created_date TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE public."Account" ALTER COLUMN role SET DEFAULT 'user';
+UPDATE public."Account" SET role = 'user' WHERE role IS NULL;
+ALTER TABLE public."Account" ALTER COLUMN role SET NOT NULL;
+ALTER TABLE public."Account" DROP CONSTRAINT IF EXISTS account_role_check;
+ALTER TABLE public."Account" ADD CONSTRAINT account_role_check CHECK (role IN ('user', 'admin'));
+
+-- Recreate unique index on email (handles older schemas without a constraint)
+CREATE UNIQUE INDEX IF NOT EXISTS account_email_key ON public."Account"(email);
+
+-- 3) Enable RLS and add policies for owner + admin management
+ALTER TABLE public."Account" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own account" ON public."Account";
+CREATE POLICY "Users can view their own account" ON public."Account"
+    FOR SELECT USING (auth.uid() = id);
+
 DROP POLICY IF EXISTS "Admins can view all accounts" ON public."Account";
 CREATE POLICY "Admins can view all accounts" ON public."Account"
     FOR SELECT USING (
-        auth.uid() = id OR
         EXISTS (
-            SELECT 1 FROM public."Account"
-            WHERE id = auth.uid() AND role = 'admin'
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
         )
     );
 
--- Grant admin access to orders
-DROP POLICY IF EXISTS "Users can view their own orders or admins can view all" ON public."Order";
-CREATE POLICY "Users can view their own orders or admins can view all" ON public."Order"
-    FOR SELECT USING (
-        auth.email() = customer_email OR
-        EXISTS (
-            SELECT 1 FROM public."Account"
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+DROP POLICY IF EXISTS "Users can update their own account" ON public."Account";
+CREATE POLICY "Users can update their own account" ON public."Account"
+    FOR UPDATE USING (auth.uid() = id);
 
--- Grant admin access to update orders
-DROP POLICY IF EXISTS "Only authenticated users can update orders" ON public."Order";
-CREATE POLICY "Admins can update orders" ON public."Order"
+DROP POLICY IF EXISTS "Admins can update any account" ON public."Account";
+CREATE POLICY "Admins can update any account" ON public."Account"
     FOR UPDATE USING (
         EXISTS (
-            SELECT 1 FROM public."Account"
-            WHERE id = auth.uid() AND role = 'admin'
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
         )
-    );
-
--- Grant admin access to products
-DROP POLICY IF EXISTS "Only authenticated users can insert products" ON public."Product";
-CREATE POLICY "Admins can insert products" ON public."Product"
-    FOR INSERT WITH CHECK (
+    )
+    WITH CHECK (
         EXISTS (
-            SELECT 1 FROM public."Account"
-            WHERE id = auth.uid() AND role = 'admin'
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
         )
     );
 
-DROP POLICY IF EXISTS "Only authenticated users can update products" ON public."Product";
-CREATE POLICY "Admins can update products" ON public."Product"
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM public."Account"
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+DROP POLICY IF EXISTS "Anyone can create an account" ON public."Account";
+CREATE POLICY "Anyone can create an account" ON public."Account"
+    FOR INSERT WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Only authenticated users can delete products" ON public."Product";
-CREATE POLICY "Admins can delete products" ON public."Product"
+DROP POLICY IF EXISTS "Admins can delete accounts" ON public."Account";
+CREATE POLICY "Admins can delete accounts" ON public."Account"
     FOR DELETE USING (
         EXISTS (
-            SELECT 1 FROM public."Account"
-            WHERE id = auth.uid() AND role = 'admin'
+            SELECT 1 FROM public."Account" admin
+            WHERE admin.id = auth.uid() AND admin.role = 'admin'
         )
     );
 
--- Function to automatically create Account record when user signs up
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public."Account" (id, email, full_name, role)
-    VALUES (
-        NEW.id,
-        NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-        'user'  -- Default role is 'user'
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET
-        email = EXCLUDED.email,
-        full_name = COALESCE(EXCLUDED.full_name, public."Account".full_name);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 4) Helpful index for role lookups
+CREATE INDEX IF NOT EXISTS idx_account_role ON public."Account"(role);
 
--- Trigger to create Account record automatically
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- 5) Backfill Account rows for any existing auth.users
+INSERT INTO public."Account" (id, email, full_name, role)
+SELECT
+    u.id,
+    u.email,
+    COALESCE(u.raw_user_meta_data->>'full_name', ''),
+    COALESCE(u.raw_user_meta_data->>'role', 'user')
+FROM auth.users u
+ON CONFLICT (id) DO NOTHING;
 
--- Also handle email confirmation updates
-CREATE OR REPLACE FUNCTION public.handle_user_update()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Update Account table if user data changes
-    UPDATE public."Account"
-    SET
-        email = NEW.email,
-        full_name = COALESCE(NEW.raw_user_meta_data->>'full_name', full_name)
-    WHERE id = NEW.id;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
-CREATE TRIGGER on_auth_user_updated
-    AFTER UPDATE ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_user_update();
-
--- Show completion message
+-- 6) Final message
 DO $$
 BEGIN
-    RAISE NOTICE '✅ Role migration completed successfully!';
-    RAISE NOTICE '📝 To make a user an admin, run:';
-    RAISE NOTICE 'UPDATE public."Account" SET role = ''admin'' WHERE email = ''your-email@example.com'';';
+    RAISE NOTICE 'Account table is present with role column (user/admin).';
+    RAISE NOTICE 'Policies applied: owner access + admin management.';
+    RAISE NOTICE 'Existing users backfilled into Account.';
 END $$;

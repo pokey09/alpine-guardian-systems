@@ -31,14 +31,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const fetchUserRole = async (userId) => {
+  const fetchUserRole = async (userId, tableExistsOverride) => {
     if (!userId) {
       setUserRole(null);
       return;
     }
 
+    const tableExists = typeof tableExistsOverride === 'boolean'
+      ? tableExistsOverride
+      : accountTableExists;
+
     // Skip fetching if table doesn't exist
-    if (!accountTableExists) {
+    if (!tableExists) {
       setUserRole('user');
       return;
     }
@@ -75,14 +79,14 @@ export const AuthProvider = ({ children }) => {
     const getSession = async () => {
       try {
         // Check if Account table exists first
-        await checkTableExists();
+        const exists = await checkTableExists();
 
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchUserRole(session.user.id);
+          await fetchUserRole(session.user.id, exists);
         } else {
           setUserRole(null);
         }
@@ -118,6 +122,7 @@ export const AuthProvider = ({ children }) => {
     session,
     user,
     userRole,
+    accountTableExists,
     isAdmin: userRole === 'admin',
     loading,
     signOut: () => supabase.auth.signOut(),
@@ -137,4 +142,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
