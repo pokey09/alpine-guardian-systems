@@ -1,21 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { LogIn, ShoppingBag, User, Menu, X } from 'lucide-react';
+import { LogIn, ShoppingBag, User, Menu, X, UserCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
 import logo from '@/assets/logo.png';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Header() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      setUser(JSON.parse(currentUser));
-    }
-  }, []);
 
   return (
     <motion.header 
@@ -52,13 +46,13 @@ export default function Header() {
                   Orders
                 </Button>
               </Link>
-              <Link to={createPageUrl('UserProfile')}>
+              <Link to={createPageUrl('Dashboard')}>
                 <Button
                   variant="outline"
                   className="bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
                 >
-                  <User className="w-4 h-4 mr-2" />
-                  Profile
+                  <UserCircle className="w-4 h-4 mr-2" />
+                  Account
                 </Button>
               </Link>
             </>
@@ -114,13 +108,13 @@ export default function Header() {
                       Orders
                     </Button>
                   </Link>
-                  <Link to={createPageUrl('UserProfile')} onClick={() => setMobileMenuOpen(false)}>
+                  <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}>
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-white hover:bg-white/10"
                     >
-                      <User className="w-4 h-4 mr-2" />
-                      Profile
+                      <UserCircle className="w-4 h-4 mr-2" />
+                      Account
                     </Button>
                   </Link>
                 </>
