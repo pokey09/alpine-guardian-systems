@@ -154,7 +154,7 @@ export default function Dashboard() {
             >
               <h2 className="text-xl font-bold text-slate-900 mb-6">Quick Actions</h2>
               
-              <div className="space-y-25">
+              <div className="space-y-6">
                 {isAdmin && (
                   <Link to={createPageUrl('AdminDashboard')}>
                     <Button className="w-full justify-start bg-slate-900 hover:bg-slate-800 text-white">
