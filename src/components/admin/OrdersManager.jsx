@@ -4,8 +4,10 @@ import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Package, User, Mail, Calendar, DollarSign } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function OrdersManager() {
+  const { session } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: orders = [], isLoading } = useQuery({
@@ -20,6 +22,7 @@ export default function OrdersManager() {
       }
       return data;
     },
+    enabled: !!session,
   });
 
   const updateStatusMutation = useMutation({
@@ -55,6 +58,7 @@ export default function OrdersManager() {
     }
   };
 
+  if (!session) return <div className="text-slate-600">Sign in to view orders.</div>;
   if (isLoading) return <div>Loading...</div>;
 
   return (

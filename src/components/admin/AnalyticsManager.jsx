@@ -2,8 +2,11 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Users, Package, ShoppingCart, TrendingUp } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function AnalyticsManager() {
+  const { session } = useAuth();
+
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
@@ -24,6 +27,7 @@ export default function AnalyticsManager() {
       if (error) throw new Error(error.message);
       return data || [];
     },
+    enabled: !!session,
   });
 
   const { data: orders = [] } = useQuery({
@@ -37,6 +41,7 @@ export default function AnalyticsManager() {
       }
       return data;
     },
+    enabled: !!session,
   });
 
   const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
