@@ -25,10 +25,13 @@ export const AuthProvider = ({ children }) => {
       if (!error && data) {
         setUserRole(data.role);
       } else {
-        setUserRole('user'); // Default to user if no role found
+        // Default to user if no role found or table doesn't exist
+        console.log('No role found for user, defaulting to "user"');
+        setUserRole('user');
       }
     } catch (err) {
-      console.error('Error fetching user role:', err);
+      // Table might not exist yet - default to user role
+      console.log('Error fetching user role (table may not exist yet):', err.message);
       setUserRole('user');
     }
   };
@@ -73,12 +76,13 @@ export const AuthProvider = ({ children }) => {
     user,
     userRole,
     isAdmin: userRole === 'admin',
+    loading,
     signOut: () => supabase.auth.signOut(),
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
