@@ -9,7 +9,6 @@ import UserProfile from './pages/UserProfile';
 import ProductDetail from './pages/ProductDetail';
 import OrderHistory from './pages/OrderHistory';
 import OrderDetails from './pages/OrderDetails';
-import UserDashboard from './pages/UserDashboard';
 
 
 export const PAGES = {
