@@ -20,33 +20,37 @@ export const AuthProvider = ({ children }) => {
         .from('Account')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (!error && data) {
+      if (data?.role) {
         setUserRole(data.role);
       } else {
-        // Default to user if no role found or table doesn't exist
-        console.log('No role found for user, defaulting to "user"');
+        // Default to user if no role found
         setUserRole('user');
       }
     } catch (err) {
       // Table might not exist yet - default to user role
-      console.log('Error fetching user role (table may not exist yet):', err.message);
       setUserRole('user');
     }
   };
 
   useEffect(() => {
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
 
-      if (session?.user) {
-        await fetchUserRole(session.user.id);
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
+        } else {
+          setUserRole(null);
+        }
+      } catch (error) {
+        console.error('Error getting session:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     getSession();
@@ -61,8 +65,6 @@ export const AuthProvider = ({ children }) => {
         } else {
           setUserRole(null);
         }
-
-        setLoading(false);
       }
     );
 
