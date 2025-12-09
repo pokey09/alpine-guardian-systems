@@ -8,10 +8,8 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { supabase } from '@/lib/supabaseClient';
 import logo from '@/assets/logo.png';
-import { useAuth } from '@/lib/AuthContext';
 
 export default function CustomSignup() {
-  const { accountTableExists } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -43,6 +41,7 @@ export default function CustomSignup() {
       options: {
         data: {
           full_name: formData.fullName,
+          role: 'user',
         },
       },
     });
@@ -51,25 +50,6 @@ export default function CustomSignup() {
       setError(error.message);
       setLoading(false);
     } else if (data.user) {
-      // Create Account record (in case trigger isn't set up)
-      if (accountTableExists !== false) {
-        const { error: accountError } = await supabase
-          .from('Account')
-          .insert({
-            id: data.user.id,
-            email: formData.email,
-            full_name: formData.fullName,
-            role: 'user',
-          })
-          .select()
-          .single();
-
-        // Ignore conflict errors (trigger already created the record)
-        if (accountError && !accountError.message.includes('duplicate')) {
-          console.error('Error creating account:', accountError);
-        }
-      }
-
       // Show success message instead of redirecting
       setSignupSuccess(true);
       setLoading(false);

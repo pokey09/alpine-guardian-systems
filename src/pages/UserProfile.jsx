@@ -11,7 +11,7 @@ import Header from '../components/landing/Header';
 import Footer from '../components/landing/Footer';
 
 export default function UserProfile() {
-  const { user, accountTableExists } = useAuth();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', email: '' });
 
@@ -43,19 +43,29 @@ export default function UserProfile() {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      if (accountTableExists !== true) {
-        throw new Error('Account table is missing or not ready.');
+      const payload = {
+        data: {
+          full_name: data.full_name,
+        },
+      };
+
+      if (data.email && data.email !== user.email) {
+        payload.email = data.email;
       }
-      const { data: updatedData, error } = await supabase
-        .from('Account')
-        .update(data)
-        .eq('id', user.id);
+
+      const { data: updatedData, error } = await supabase.auth.updateUser(payload);
       if (error) {
         throw new Error(error.message);
       }
-      return updatedData;
+      return updatedData?.user;
     },
-    onSuccess: () => {
+    onSuccess: (updatedUser) => {
+      if (updatedUser) {
+        setFormData({
+          full_name: updatedUser.user_metadata?.full_name || '',
+          email: updatedUser.email,
+        });
+      }
       setIsEditing(false);
       queryClient.invalidateQueries();
     },
@@ -98,7 +108,7 @@ export default function UserProfile() {
             <div className="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-slate-900">Account Details</h2>
-                {!isEditing && accountTableExists === true && (
+                {!isEditing && (
                   <Button
                     onClick={() => setIsEditing(true)}
                     variant="outline"
@@ -115,17 +125,6 @@ export default function UserProfile() {
                   <User className="w-12 h-12 text-white" />
                 </div>
               </div>
-
-              {accountTableExists === false && (
-                <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-3">
-                  Account table is missing. Run `supabase-role-migration.sql` in Supabase SQL Editor to enable profile updates.
-                </div>
-              )}
-              {accountTableExists === null && (
-                <div className="mb-4 bg-slate-100 border border-slate-200 text-slate-700 text-sm rounded-xl p-3">
-                  Checking Account table status...
-                </div>
-              )}
 
               {isEditing ? (
                 <div className="space-y-4">

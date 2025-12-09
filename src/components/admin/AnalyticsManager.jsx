@@ -1,26 +1,18 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { Users, Package, ShoppingCart, TrendingUp } from 'lucide-react';
-import { useAuth } from '@/lib/AuthContext';
 
 export default function AnalyticsManager() {
-  const { accountTableExists } = useAuth();
-  const accountReady = accountTableExists === true;
-
-  const { data: users = [] } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('Account')
-        .select('*');
-      if (error) {
-        throw new Error(error.message);
-      }
-      return data;
-    },
-    enabled: accountReady,
-  });
+  const { adminClient, serviceRoleLoaded } = useMemo(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceRoleKey) {
+      return { adminClient: null, serviceRoleLoaded: !!serviceRoleKey };
+    }
+    return { adminClient: createClient(url, serviceRoleKey), serviceRoleLoaded: true };
+  }, []);
 
   const { data: products = [] } = useQuery({
     queryKey: ['products'],
@@ -33,6 +25,21 @@ export default function AnalyticsManager() {
       }
       return data;
     },
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['auth-users'],
+    queryFn: async () => {
+      if (!adminClient) {
+        throw new Error('Service role key not configured; cannot read auth.users from the client.');
+      }
+      const { data, error } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 200 });
+      if (error) {
+        throw new Error(error.message);
+      }
+      return data?.users || [];
+    },
+    enabled: !!adminClient,
   });
 
   const { data: orders = [] } = useQuery({
@@ -82,24 +89,13 @@ export default function AnalyticsManager() {
     },
   ];
 
-  if (accountTableExists === false) {
-    return (
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
-        Account table is missing. Run the Supabase SQL file `supabase-role-migration.sql` to enable admin analytics.
-      </div>
-    );
-  }
-
-  if (accountTableExists === null) {
-    return (
-      <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-600">
-        Checking Account table status...
-      </div>
-    );
-  }
-
   return (
     <div>
+      {!serviceRoleLoaded && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-4">
+          To load user analytics from `auth.users`, set `VITE_SUPABASE_SERVICE_ROLE_KEY` (only in secure/server context). Showing other metrics without user counts.
+        </div>
+      )}
       <h2 className="text-2xl font-bold text-slate-900 mb-6">Analytics Overview</h2>
       
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

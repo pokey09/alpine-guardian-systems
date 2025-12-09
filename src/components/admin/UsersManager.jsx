@@ -1,47 +1,46 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { User, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
-import { useAuth } from '@/lib/AuthContext';
 
 export default function UsersManager() {
-  const { accountTableExists } = useAuth();
-  const accountReady = accountTableExists === true;
+  const { adminClient, serviceRoleLoaded } = useMemo(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceRoleKey) {
+      return { adminClient: null, serviceRoleLoaded: !!serviceRoleKey };
+    }
+    return { adminClient: createClient(url, serviceRoleKey), serviceRoleLoaded: true };
+  }, []);
 
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['accounts'],
+  const { data: users = [], isLoading, error } = useQuery({
+    queryKey: ['auth-users'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('Account')
-        .select('*');
+      if (!adminClient) {
+        throw new Error('Service role key not configured; cannot read auth.users from the client.');
+      }
+      const { data, error } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 200 });
       if (error) {
         throw new Error(error.message);
       }
-      return data;
+      return data?.users || [];
     },
-    enabled: accountReady,
+    enabled: !!adminClient,
   });
 
-  if (accountTableExists === false) {
+  if (!serviceRoleLoaded) {
     return (
       <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
-        Account table is missing. Run the Supabase SQL file `supabase-role-migration.sql` to manage users.
-      </div>
-    );
-  }
-
-  if (accountTableExists === null) {
-    return (
-      <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-600">
-        Checking Account table status...
+        To manage users from `auth.users`, set `VITE_SUPABASE_SERVICE_ROLE_KEY` (only in secure/server context). Service role is required to list users.
       </div>
     );
   }
 
   if (isLoading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-600">Error loading users: {error.message}</div>;
 
   return (
     <div>
@@ -54,10 +53,10 @@ export default function UsersManager() {
               <User className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-slate-900">{user.full_name}</h3>
+              <h3 className="font-semibold text-slate-900">{user.user_metadata?.full_name || user.email}</h3>
               <p className="text-slate-600 text-sm">{user.email}</p>
               <p className="text-slate-400 text-xs mt-1">
-                Joined: {new Date(user.created_date).toLocaleDateString()}
+                Joined: {new Date(user.created_at).toLocaleDateString()}
               </p>
             </div>
             <Button
