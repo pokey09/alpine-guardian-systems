@@ -20,12 +20,15 @@ CREATE TABLE IF NOT EXISTS public."Account" (
 ALTER TABLE public."Account" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Account table
+DROP POLICY IF EXISTS "Users can view their own account" ON public."Account";
 CREATE POLICY "Users can view their own account" ON public."Account"
     FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update their own account" ON public."Account";
 CREATE POLICY "Users can update their own account" ON public."Account"
     FOR UPDATE USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Anyone can create an account" ON public."Account";
 CREATE POLICY "Anyone can create an account" ON public."Account"
     FOR INSERT WITH CHECK (true);
 
@@ -48,15 +51,19 @@ CREATE TABLE IF NOT EXISTS public."Product" (
 ALTER TABLE public."Product" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Product table
+DROP POLICY IF EXISTS "Products are viewable by everyone" ON public."Product";
 CREATE POLICY "Products are viewable by everyone" ON public."Product"
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Only authenticated users can insert products" ON public."Product";
 CREATE POLICY "Only authenticated users can insert products" ON public."Product"
     FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Only authenticated users can update products" ON public."Product";
 CREATE POLICY "Only authenticated users can update products" ON public."Product"
     FOR UPDATE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Only authenticated users can delete products" ON public."Product";
 CREATE POLICY "Only authenticated users can delete products" ON public."Product"
     FOR DELETE USING (auth.role() = 'authenticated');
 
@@ -82,15 +89,18 @@ CREATE TABLE IF NOT EXISTS public."Order" (
 ALTER TABLE public."Order" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Order table
+DROP POLICY IF EXISTS "Users can view their own orders" ON public."Order";
 CREATE POLICY "Users can view their own orders" ON public."Order"
     FOR SELECT USING (
         auth.email() = customer_email OR
         auth.role() = 'authenticated'
     );
 
+DROP POLICY IF EXISTS "Anyone can create an order" ON public."Order";
 CREATE POLICY "Anyone can create an order" ON public."Order"
     FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Only authenticated users can update orders" ON public."Order";
 CREATE POLICY "Only authenticated users can update orders" ON public."Order"
     FOR UPDATE USING (auth.role() = 'authenticated');
 
@@ -118,15 +128,19 @@ CREATE TABLE IF NOT EXISTS public."Review" (
 ALTER TABLE public."Review" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for Review table
+DROP POLICY IF EXISTS "Approved reviews are viewable by everyone" ON public."Review";
 CREATE POLICY "Approved reviews are viewable by everyone" ON public."Review"
     FOR SELECT USING (status = 'approved' OR auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Anyone can create a review" ON public."Review";
 CREATE POLICY "Anyone can create a review" ON public."Review"
     FOR INSERT WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Only authenticated users can update reviews" ON public."Review";
 CREATE POLICY "Only authenticated users can update reviews" ON public."Review"
     FOR UPDATE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Only authenticated users can delete reviews" ON public."Review";
 CREATE POLICY "Only authenticated users can delete reviews" ON public."Review"
     FOR DELETE USING (auth.role() = 'authenticated');
 
@@ -155,12 +169,15 @@ CREATE TABLE IF NOT EXISTS public."SiteSettings" (
 ALTER TABLE public."SiteSettings" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for SiteSettings table
+DROP POLICY IF EXISTS "Site settings are viewable by everyone" ON public."SiteSettings";
 CREATE POLICY "Site settings are viewable by everyone" ON public."SiteSettings"
     FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Only authenticated users can insert site settings" ON public."SiteSettings";
 CREATE POLICY "Only authenticated users can insert site settings" ON public."SiteSettings"
     FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Only authenticated users can update site settings" ON public."SiteSettings";
 CREATE POLICY "Only authenticated users can update site settings" ON public."SiteSettings"
     FOR UPDATE USING (auth.role() = 'authenticated');
 
