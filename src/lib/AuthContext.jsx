@@ -3,26 +3,39 @@ import { supabase } from './supabaseClient';
 
 const AuthContext = createContext();
 
+const isMissingAccountTableError = (error) => {
+  if (!error) return false;
+  return (
+    error.code === 'PGRST116' ||
+    error.message?.includes('relation') ||
+    error.message?.includes('does not exist') ||
+    error.message?.includes('500')
+  );
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [account, setAccount] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [accountTableExists, setAccountTableExists] = useState(true);
+  // null = unknown, true = exists, false = missing
+  const [accountTableExists, setAccountTableExists] = useState(null);
 
   const checkTableExists = async () => {
-    try {
-      // Try a simple query to check if table exists
-      const { error } = await supabase
-        .from('Account')
-        .select('id')
-        .limit(1);
+    // If we already know it's missing, don't re-query
+    if (accountTableExists === false) return false;
 
-      if (error && (error.code === 'PGRST116' || error.message.includes('500') || error.message.includes('relation') || error.message.includes('does not exist'))) {
+    try {
+      const { error } = await supabase.from('Account').select('id').limit(1);
+
+      if (error && isMissingAccountTableError(error)) {
         console.warn('⚠️ Account table does not exist. Run supabase-role-migration.sql to enable admin roles.');
         setAccountTableExists(false);
         return false;
       }
+
+      setAccountTableExists(true);
       return true;
     } catch (err) {
       console.warn('⚠️ Account table check failed. Disabling role checks.');
@@ -31,9 +44,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const fetchUserRole = async (userId, tableExistsOverride) => {
+  const loadAccountAndRole = async (userId, tableExistsOverride) => {
     if (!userId) {
       setUserRole(null);
+      setAccount(null);
       return;
     }
 
@@ -41,44 +55,44 @@ export const AuthProvider = ({ children }) => {
       ? tableExistsOverride
       : accountTableExists;
 
-    // Skip fetching if table doesn't exist
-    if (!tableExists) {
+    if (tableExists === false) {
       setUserRole('user');
+      setAccount(null);
+      return;
+    }
+
+    const tableIsPresent = tableExists ?? await checkTableExists();
+    if (!tableIsPresent) {
+      setUserRole('user');
+      setAccount(null);
       return;
     }
 
     try {
       const { data, error } = await supabase
         .from('Account')
-        .select('role')
+        .select('id, role, email, full_name')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
-        // Table might have been deleted
-        if (error.code === 'PGRST116' || error.message.includes('500')) {
-          setAccountTableExists(false);
-          setUserRole('user');
-          return;
-        }
+      if (error && isMissingAccountTableError(error)) {
+        setAccountTableExists(false);
+        setUserRole('user');
+        setAccount(null);
+        return;
       }
 
-      if (data?.role) {
-        setUserRole(data.role);
-      } else {
-        // Default to user if no role found
-        setUserRole('user');
-      }
+      setUserRole(data?.role || 'user');
+      setAccount(data || null);
     } catch (err) {
-      // Table might not exist yet - default to user role
       setUserRole('user');
+      setAccount(null);
     }
   };
 
   useEffect(() => {
     const getSession = async () => {
       try {
-        // Check if Account table exists first
         const exists = await checkTableExists();
 
         const { data: { session } } = await supabase.auth.getSession();
@@ -86,13 +100,15 @@ export const AuthProvider = ({ children }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchUserRole(session.user.id, exists);
+          await loadAccountAndRole(session.user.id, exists);
         } else {
           setUserRole(null);
+          setAccount(null);
         }
       } catch (error) {
         console.error('Error getting session:', error);
         setUserRole('user'); // Default on error
+        setAccount(null);
       } finally {
         setLoading(false);
       }
@@ -101,14 +117,15 @@ export const AuthProvider = ({ children }) => {
     getSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchUserRole(session.user.id);
+          await loadAccountAndRole(session.user.id);
         } else {
           setUserRole(null);
+          setAccount(null);
         }
       }
     );
@@ -122,6 +139,7 @@ export const AuthProvider = ({ children }) => {
     session,
     user,
     userRole,
+    account,
     accountTableExists,
     isAdmin: userRole === 'admin',
     loading,

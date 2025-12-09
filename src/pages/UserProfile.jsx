@@ -43,8 +43,8 @@ export default function UserProfile() {
 
   const updateMutation = useMutation({
     mutationFn: async (data) => {
-      if (!accountTableExists) {
-        throw new Error('Account table is missing.');
+      if (accountTableExists !== true) {
+        throw new Error('Account table is missing or not ready.');
       }
       const { data: updatedData, error } = await supabase
         .from('Account')
@@ -98,7 +98,7 @@ export default function UserProfile() {
             <div className="bg-white rounded-2xl p-6 border border-slate-200 mb-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-slate-900">Account Details</h2>
-                {!isEditing && accountTableExists && (
+                {!isEditing && accountTableExists === true && (
                   <Button
                     onClick={() => setIsEditing(true)}
                     variant="outline"
@@ -116,9 +116,14 @@ export default function UserProfile() {
                 </div>
               </div>
 
-              {!accountTableExists && (
+              {accountTableExists === false && (
                 <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-3">
                   Account table is missing. Run `supabase-role-migration.sql` in Supabase SQL Editor to enable profile updates.
+                </div>
+              )}
+              {accountTableExists === null && (
+                <div className="mb-4 bg-slate-100 border border-slate-200 text-slate-700 text-sm rounded-xl p-3">
+                  Checking Account table status...
                 </div>
               )}
 

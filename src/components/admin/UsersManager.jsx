@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/AuthContext';
 
 export default function UsersManager() {
   const { accountTableExists } = useAuth();
+  const accountReady = accountTableExists === true;
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['accounts'],
@@ -21,13 +22,21 @@ export default function UsersManager() {
       }
       return data;
     },
-    enabled: accountTableExists,
+    enabled: accountReady,
   });
 
-  if (!accountTableExists) {
+  if (accountTableExists === false) {
     return (
       <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
         Account table is missing. Run the Supabase SQL file `supabase-role-migration.sql` to manage users.
+      </div>
+    );
+  }
+
+  if (accountTableExists === null) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-600">
+        Checking Account table status...
       </div>
     );
   }

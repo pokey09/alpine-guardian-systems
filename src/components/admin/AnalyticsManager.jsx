@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 
 export default function AnalyticsManager() {
   const { accountTableExists } = useAuth();
+  const accountReady = accountTableExists === true;
 
   const { data: users = [] } = useQuery({
     queryKey: ['accounts'],
@@ -18,7 +19,7 @@ export default function AnalyticsManager() {
       }
       return data;
     },
-    enabled: accountTableExists,
+    enabled: accountReady,
   });
 
   const { data: products = [] } = useQuery({
@@ -81,10 +82,18 @@ export default function AnalyticsManager() {
     },
   ];
 
-  if (!accountTableExists) {
+  if (accountTableExists === false) {
     return (
       <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl">
         Account table is missing. Run the Supabase SQL file `supabase-role-migration.sql` to enable admin analytics.
+      </div>
+    );
+  }
+
+  if (accountTableExists === null) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-xl p-4 text-slate-600">
+        Checking Account table status...
       </div>
     );
   }

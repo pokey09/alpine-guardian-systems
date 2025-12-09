@@ -45,6 +45,16 @@ export default function AdminDashboard() {
     );
   }
 
+  if (accountTableExists === null) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center text-slate-700">
+          Checking Account table status...
+        </div>
+      </div>
+    );
+  }
+
   // Show setup help if Account table is missing
   if (accountTableExists === false) {
     return (

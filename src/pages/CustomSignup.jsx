@@ -52,7 +52,7 @@ export default function CustomSignup() {
       setLoading(false);
     } else if (data.user) {
       // Create Account record (in case trigger isn't set up)
-      if (accountTableExists) {
+      if (accountTableExists !== false) {
         const { error: accountError } = await supabase
           .from('Account')
           .insert({
