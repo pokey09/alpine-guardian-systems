@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { User, ShoppingBag, Package, LogOut, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Header from '../components/landing/Header';
 import Footer from '../components/landing/Footer';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
+  const { user, session, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
-      window.location.href = createPageUrl('CustomLogin');
-      return;
+    if (!session) {
+      navigate(createPageUrl('CustomLogin'));
     }
-    setUser(JSON.parse(currentUser));
-  }, []);
+  }, [session, navigate]);
 
   // TODO: Implement API client to fetch orders
   const orders = [];
 
-  const handleLogout = () => {
-    localStorage.removeItem('currentUser');
-    window.location.href = createPageUrl('Home');
+  const handleLogout = async () => {
+    await signOut();
+    navigate(createPageUrl('Home'));
   };
 
   if (!user) return null;
@@ -51,7 +50,7 @@ export default function Dashboard() {
             <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-6 sm:p-8 text-white shadow-xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {user.full_name}!</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back, {user.user_metadata?.full_name || user.email}!</h1>
                   <p className="text-white/90 text-sm sm:text-base">{user.email}</p>
                 </div>
                 <Button
