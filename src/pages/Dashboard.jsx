@@ -9,7 +9,7 @@ import Footer from '../components/landing/Footer';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function Dashboard() {
-  const { user, session, signOut } = useAuth();
+  const { user, session, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -154,7 +154,15 @@ export default function Dashboard() {
             >
               <h2 className="text-xl font-bold text-slate-900 mb-6">Quick Actions</h2>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
+                {isAdmin && (
+                  <Link to={createPageUrl('AdminDashboard')}>
+                    <Button className="w-full justify-start bg-slate-900 hover:bg-slate-800 text-white">
+                      Admin Dashboard
+                    </Button>
+                  </Link>
+                )}
+
                 <Link to={createPageUrl('StoreFront')}>
                   <Button className="w-full justify-start bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white">
                     <ShoppingBag className="w-4 h-4 mr-2" />
