@@ -13,23 +13,36 @@ import OrdersManager from '../components/admin/OrdersManager';
 import ReviewsManager from '../components/admin/ReviewsManager';
 
 export default function AdminDashboard() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Don't redirect while still loading
+    if (loading) return;
+
     if (!user) {
       navigate(createPageUrl('CustomLogin'));
     } else if (isAdmin === false) {
       // User is logged in but not an admin
       navigate(createPageUrl('Dashboard'));
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, loading, navigate]);
 
   const handleLogout = async () => {
     await signOut();
     navigate(createPageUrl('Home'));
   };
 
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-red-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Show access denied if not admin
   if (!user || !isAdmin) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">

@@ -22,6 +22,15 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .maybeSingle();
 
+      if (error) {
+        // Check if it's a 500 error (table doesn't exist)
+        if (error.code === 'PGRST116' || error.message.includes('500')) {
+          console.warn('Account table does not exist. Please run the migration SQL. Defaulting to "user" role.');
+          setUserRole('user');
+          return;
+        }
+      }
+
       if (data?.role) {
         setUserRole(data.role);
       } else {
@@ -30,6 +39,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (err) {
       // Table might not exist yet - default to user role
+      console.warn('Error fetching user role:', err.message);
       setUserRole('user');
     }
   };
