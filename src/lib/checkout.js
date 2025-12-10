@@ -3,7 +3,7 @@ import { getStripe } from './stripeClient';
 
 /**
  * Starts a Stripe Checkout session via Supabase Edge Function `create-checkout-session`.
- * Expects items in shape: [{ priceId: string, quantity: number }]
+ * Expects items in shape: [{ priceId: string, quantity: number, isSubscription?: boolean }]
  */
 export const startCheckout = async ({ items, customerEmail }) => {
   if (!items || items.length === 0) {

@@ -58,7 +58,7 @@ export default function StoreFront() {
         .map((item) => {
           const priceId = item.is_subscription ? item.stripe_recurring_price_id : item.stripe_price_id;
           if (!priceId) return null;
-          return { priceId, quantity: item.quantity };
+          return { priceId, quantity: item.quantity, isSubscription: !!item.is_subscription };
         })
         .filter(Boolean);
 
