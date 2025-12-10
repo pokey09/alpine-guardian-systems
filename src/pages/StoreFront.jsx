@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { ShoppingCart, Star, Search, SlidersHorizontal, Eye, ArrowUpDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
+import { startCheckout } from '@/lib/checkout';
+import { useAuth } from '@/lib/AuthContext';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import Header from '../components/landing/Header';
@@ -21,6 +23,7 @@ export default function StoreFront() {
   const [showFilters, setShowFilters] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [sortBy, setSortBy] = useState('name');
+  const { user } = useAuth();
 
   const addToCart = (product) => {
     setCartItems((prev) => {
@@ -49,6 +52,31 @@ export default function StoreFront() {
     setCartItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  const handleCheckout = async () => {
+    try {
+      const lineItems = cartItems
+        .map((item) => {
+          const priceId = item.is_subscription ? item.stripe_recurring_price_id : item.stripe_price_id;
+          if (!priceId) return null;
+          return { priceId, quantity: item.quantity };
+        })
+        .filter(Boolean);
+
+      if (lineItems.length === 0) {
+        alert('No Stripe price IDs configured for items in your cart.');
+        return;
+      }
+
+      await startCheckout({
+        items: lineItems,
+        customerEmail: user?.email || undefined,
+      });
+    } catch (err) {
+      console.error('Stripe checkout error:', err);
+      alert(err.message || 'Unable to start checkout.');
+    }
+  };
+
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const { data: products = [], isLoading } = useQuery({
@@ -56,7 +84,7 @@ export default function StoreFront() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Product')
-        .select('id,name,price,image,description,rating,variations');
+        .select('id,name,price,image,description,rating,variations,is_subscription,subscription_interval,stripe_price_id,stripe_recurring_price_id');
       if (error) {
         throw new Error(error.message);
       }
@@ -149,6 +177,7 @@ export default function StoreFront() {
         items={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemove={removeItem}
+        onCheckout={handleCheckout}
       />
       
       <div className="pt-20 sm:pt-24 pb-12 sm:pb-16">

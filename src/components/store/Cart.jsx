@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { X, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '../../utils';
 
-export default function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemove }) {
+export default function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemove, onCheckout }) {
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleCheckout = async () => {
+    if (!onCheckout) return;
+    setCheckoutLoading(true);
+    await onCheckout();
+    setCheckoutLoading(false);
+  };
 
   return (
     <AnimatePresence>
@@ -41,11 +47,11 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemov
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <ShoppingCart className="w-16 h-16 text-slate-300 mb-4" />
-                  <p className="text-slate-600 text-lg">Your cart is empty</p>
-                  <p className="text-slate-400 text-sm mt-2">Add items to get started</p>
+            {items.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <ShoppingCart className="w-16 h-16 text-slate-300 mb-4" />
+                <p className="text-slate-600 text-lg">Your cart is empty</p>
+                <p className="text-slate-400 text-sm mt-2">Add items to get started</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -94,11 +100,13 @@ export default function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemov
                   <span className="text-slate-600">Subtotal</span>
                   <span className="text-2xl font-bold text-slate-900">${total.toFixed(2)}</span>
                 </div>
-                <Link to={createPageUrl('Checkout')}>
-                  <Button className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-xl text-base font-medium">
-                    Checkout
-                  </Button>
-                </Link>
+                <Button
+                  className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-xl text-base font-medium"
+                  onClick={handleCheckout}
+                  disabled={checkoutLoading}
+                >
+                  {checkoutLoading ? 'Redirecting...' : 'Checkout with Stripe'}
+                </Button>
               </div>
             )}
           </motion.div>

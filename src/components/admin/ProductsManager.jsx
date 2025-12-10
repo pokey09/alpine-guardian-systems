@@ -19,6 +19,8 @@ export default function ProductsManager() {
     description: '',
     is_subscription: false,
     subscription_interval: '',
+    stripe_price_id: '',
+    stripe_recurring_price_id: '',
     rating: 5,
   });
 
@@ -86,7 +88,17 @@ export default function ProductsManager() {
   });
 
   const resetForm = () => {
-    setFormData({ name: '', price: '', image: '', description: '', is_subscription: false, subscription_interval: '', rating: 5 });
+    setFormData({
+      name: '',
+      price: '',
+      image: '',
+      description: '',
+      is_subscription: false,
+      subscription_interval: '',
+      stripe_price_id: '',
+      stripe_recurring_price_id: '',
+      rating: 5,
+    });
     setEditingProduct(null);
     setShowForm(false);
   };
@@ -98,8 +110,10 @@ export default function ProductsManager() {
       price: product.price,
       image: product.image || '',
       description: product.description,
-       is_subscription: product.is_subscription || false,
-       subscription_interval: product.subscription_interval || '',
+      is_subscription: product.is_subscription || false,
+      subscription_interval: product.subscription_interval || '',
+      stripe_price_id: product.stripe_price_id || '',
+      stripe_recurring_price_id: product.stripe_recurring_price_id || '',
       rating: product.rating,
     });
     setShowForm(true);
@@ -202,6 +216,24 @@ export default function ProductsManager() {
                     <SelectItem value="yearly">Yearly</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label>Stripe Price ID (one-time)</Label>
+                <Input
+                  value={formData.stripe_price_id}
+                  onChange={(e) => setFormData({ ...formData, stripe_price_id: e.target.value })}
+                  placeholder="price_..."
+                />
+              </div>
+              <div>
+                <Label>Stripe Recurring Price ID</Label>
+                <Input
+                  value={formData.stripe_recurring_price_id}
+                  onChange={(e) => setFormData({ ...formData, stripe_recurring_price_id: e.target.value })}
+                  placeholder="price_... (recurring)"
+                />
               </div>
             </div>
             <div>
