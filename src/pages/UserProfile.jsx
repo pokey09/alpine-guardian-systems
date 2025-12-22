@@ -230,7 +230,7 @@ export default function UserProfile() {
                               <span className="text-slate-700">
                                 {item.name} <span className="text-slate-400">× {item.quantity}</span>
                               </span>
-                              <span className="text-slate-600">${(item.price * item.quantity).toFixed(2)}</span>
+                              <span className="text-slate-600">${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
                             </div>
                           ))}
                         </div>

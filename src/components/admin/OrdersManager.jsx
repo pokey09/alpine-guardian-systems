@@ -131,7 +131,7 @@ export default function OrdersManager() {
                         <span className="text-slate-500 ml-2">× {item.quantity}</span>
                       </div>
                       <span className="font-semibold text-slate-900">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ${(parseFloat(item.price) * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   ))}

@@ -5,7 +5,7 @@ import { X, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 
 export default function Cart({ isOpen, onClose, items, onUpdateQuantity, onRemove, onCheckout }) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = items.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
 
   const handleCheckout = async () => {
     if (!onCheckout) return;

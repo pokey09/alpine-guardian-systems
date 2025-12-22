@@ -25,7 +25,7 @@ export default function Checkout() {
     }
   }, []);
 
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = cartItems.reduce((sum, item) => sum + parseFloat(item.price) * item.quantity, 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,7 +86,7 @@ export default function Checkout() {
                     <span className="text-slate-600">
                       {item.name} × {item.quantity}
                     </span>
-                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-medium">${(parseFloat(item.price) * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
                 <div className="border-t border-slate-200 pt-2 mt-2 flex justify-between font-bold">
@@ -178,7 +178,7 @@ export default function Checkout() {
                         <p className="text-sm text-slate-600">Qty: {item.quantity}</p>
                       </div>
                       <span className="font-semibold text-slate-900">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ${(parseFloat(item.price) * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   ))}

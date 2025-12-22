@@ -165,8 +165,8 @@ export default function OrderDetails() {
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-slate-900">${(item.price * item.quantity).toFixed(2)}</p>
-                          <p className="text-sm text-slate-600">${item.price.toFixed(2)} each</p>
+                          <p className="font-bold text-slate-900">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                          <p className="text-sm text-slate-600">${parseFloat(item.price).toFixed(2)} each</p>
                         </div>
                       </div>
                     ))}
