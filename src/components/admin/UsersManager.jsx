@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function UsersManager() {
   const [error, setError] = useState(null);
@@ -24,7 +25,7 @@ export default function UsersManager() {
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [orderForm, setOrderForm] = useState({
-    items: [{ name: '', price: '', quantity: 1 }],
+    items: [{ type: 'custom', productId: null, name: '', price: '', quantity: 1 }],
   });
 
   const { data: users = [], isLoading, refetch } = useQuery({
@@ -52,6 +53,21 @@ export default function UsersManager() {
         setError('Unable to fetch users. Please ensure you have admin access.');
         return [];
       }
+    },
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Product')
+        .select('*')
+        .order('name');
+      if (error) {
+        console.error('Error loading products:', error);
+        return [];
+      }
+      return data;
     },
   });
 
@@ -114,7 +130,7 @@ export default function UsersManager() {
       });
       setOrderDialogOpen(false);
       setSelectedUser(null);
-      setOrderForm({ items: [{ name: '', price: '', quantity: 1 }] });
+      setOrderForm({ items: [{ type: 'custom', productId: null, name: '', price: '', quantity: 1 }] });
     },
     onError: (error) => {
       toast({
@@ -133,7 +149,7 @@ export default function UsersManager() {
   const handleAddOrderItem = () => {
     setOrderForm(prev => ({
       ...prev,
-      items: [...prev.items, { name: '', price: '', quantity: 1 }],
+      items: [...prev.items, { type: 'custom', productId: null, name: '', price: '', quantity: 1 }],
     }));
   };
 
@@ -147,9 +163,34 @@ export default function UsersManager() {
   const handleOrderItemChange = (index, field, value) => {
     setOrderForm(prev => ({
       ...prev,
-      items: prev.items.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item
-      ),
+      items: prev.items.map((item, i) => {
+        if (i !== index) return item;
+
+        // If changing type, reset the item
+        if (field === 'type') {
+          if (value === 'custom') {
+            return { type: 'custom', productId: null, name: '', price: '', quantity: 1 };
+          } else {
+            return { type: 'product', productId: null, name: '', price: '', quantity: 1 };
+          }
+        }
+
+        // If selecting a product, populate its data
+        if (field === 'productId') {
+          const product = products.find(p => p.id === value);
+          if (product) {
+            return {
+              ...item,
+              productId: value,
+              name: product.name,
+              price: product.price.toString(),
+              quantity: item.quantity || 1
+            };
+          }
+        }
+
+        return { ...item, [field]: value };
+      }),
     }));
   };
 
@@ -348,14 +389,52 @@ export default function UsersManager() {
                 <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 rounded-lg">
                   <div className="flex-1 space-y-2">
                     <div>
-                      <Label htmlFor={`item-name-${index}`} className="text-xs">Item Name</Label>
-                      <Input
-                        id={`item-name-${index}`}
-                        placeholder="Product name"
-                        value={item.name}
-                        onChange={(e) => handleOrderItemChange(index, 'name', e.target.value)}
-                      />
+                      <Label htmlFor={`item-type-${index}`} className="text-xs">Item Type</Label>
+                      <Select
+                        value={item.type}
+                        onValueChange={(value) => handleOrderItemChange(index, 'type', value)}
+                      >
+                        <SelectTrigger id={`item-type-${index}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="product">Existing Product</SelectItem>
+                          <SelectItem value="custom">Custom Item</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+
+                    {item.type === 'product' ? (
+                      <div>
+                        <Label htmlFor={`item-product-${index}`} className="text-xs">Select Product</Label>
+                        <Select
+                          value={item.productId || ''}
+                          onValueChange={(value) => handleOrderItemChange(index, 'productId', value)}
+                        >
+                          <SelectTrigger id={`item-product-${index}`}>
+                            <SelectValue placeholder="Choose a product" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map((product) => (
+                              <SelectItem key={product.id} value={product.id}>
+                                {product.name} - ${product.price}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div>
+                        <Label htmlFor={`item-name-${index}`} className="text-xs">Item Name</Label>
+                        <Input
+                          id={`item-name-${index}`}
+                          placeholder="Product name"
+                          value={item.name}
+                          onChange={(e) => handleOrderItemChange(index, 'name', e.target.value)}
+                        />
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label htmlFor={`item-price-${index}`} className="text-xs">Price</Label>
@@ -366,6 +445,7 @@ export default function UsersManager() {
                           placeholder="0.00"
                           value={item.price}
                           onChange={(e) => handleOrderItemChange(index, 'price', e.target.value)}
+                          disabled={item.type === 'product' && item.productId}
                         />
                       </div>
                       <div>
@@ -418,7 +498,7 @@ export default function UsersManager() {
               onClick={() => {
                 setOrderDialogOpen(false);
                 setSelectedUser(null);
-                setOrderForm({ items: [{ name: '', price: '', quantity: 1 }] });
+                setOrderForm({ items: [{ type: 'custom', productId: null, name: '', price: '', quantity: 1 }] });
               }}
             >
               Cancel
