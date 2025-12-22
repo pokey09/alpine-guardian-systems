@@ -7,6 +7,8 @@ import { createPageUrl } from '../utils';
 import Header from '../components/landing/Header';
 import Footer from '../components/landing/Footer';
 import { useAuth } from '@/lib/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function Dashboard() {
   const { user, session, isAdmin, signOut } = useAuth();
@@ -18,8 +20,26 @@ export default function Dashboard() {
     }
   }, [session, navigate]);
 
-  // TODO: Implement API client to fetch orders
-  const orders = [];
+  const { data: orders = [], isLoading } = useQuery({
+    queryKey: ['userOrders', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+
+      const { data, error } = await supabase
+        .from('Order')
+        .select('*')
+        .eq('customer_email', user.email)
+        .order('created_date', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('Error loading orders:', error);
+        return [];
+      }
+      return data || [];
+    },
+    enabled: !!user?.email,
+  });
 
   const handleLogout = async () => {
     await signOut();
@@ -29,9 +49,9 @@ export default function Dashboard() {
   if (!user) return null;
 
   const stats = [
-    { label: 'Total Orders', value: orders.length, icon: Package },
-    { label: 'Pending', value: orders.filter(o => o.status === 'pending').length, icon: ShoppingBag },
-    { label: 'Completed', value: orders.filter(o => o.status === 'completed').length, icon: Package },
+    { label: 'Total Orders', value: isLoading ? '...' : orders.length, icon: Package },
+    { label: 'Pending', value: isLoading ? '...' : orders.filter(o => o.status === 'pending').length, icon: ShoppingBag },
+    { label: 'Completed', value: isLoading ? '...' : orders.filter(o => o.status === 'completed').length, icon: Package },
   ];
 
   return (
@@ -103,7 +123,12 @@ export default function Dashboard() {
                 </Link>
               </div>
 
-              {orders.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-4 border-slate-200 border-t-red-600 rounded-full animate-spin mx-auto"></div>
+                  <p className="text-slate-600 mt-4">Loading orders...</p>
+                </div>
+              ) : orders.length === 0 ? (
                 <div className="text-center py-8">
                   <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-600">No orders yet</p>
