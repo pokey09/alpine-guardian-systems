@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, User, Mail, Calendar, DollarSign } from 'lucide-react';
+import { Package, User, Mail, Calendar, DollarSign, Trash2 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function OrdersManager() {
   const { session } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['orders'],
@@ -42,8 +44,40 @@ export default function OrdersManager() {
     },
   });
 
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (id) => {
+      const { error } = await supabase
+        .from('Order')
+        .delete()
+        .eq('id', id);
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Order deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete order',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleStatusChange = (orderId, newStatus) => {
     updateStatusMutation.mutate({ id: orderId, status: newStatus });
+  };
+
+  const handleDeleteOrder = (orderId) => {
+    if (confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      deleteOrderMutation.mutate(orderId);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -117,6 +151,15 @@ export default function OrdersManager() {
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleDeleteOrder(order.id)}
+                  disabled={deleteOrderMutation.isLoading}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Delete
+                </Button>
               </div>
             </div>
 
