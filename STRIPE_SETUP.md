@@ -70,8 +70,10 @@ For each product in your store:
 
 **Production Checklist:**
 - [ ] Database migration run successfully
-- [ ] Edge Function deployed
-- [ ] Environment variables set in Supabase
+- [x] Edge Function deployed ✅ (Version 3, Active)
+- [x] Environment variables set in Supabase ✅
+  - `STRIPE_SECRET_KEY` - Set from .env.local
+  - `SITE_URL` - Set to `http://localhost:5173` (update for production!)
 - [ ] Stripe products created
 - [ ] Price IDs added to products in admin
 - [ ] Test checkout with test card
