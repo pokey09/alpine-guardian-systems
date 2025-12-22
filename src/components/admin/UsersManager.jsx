@@ -1,13 +1,31 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
-import { User, ExternalLink, Shield, ShieldOff, Mail, Calendar } from 'lucide-react';
+import { User, ExternalLink, Shield, ShieldOff, Mail, Calendar, Package, Plus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function UsersManager() {
   const [error, setError] = useState(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [orderForm, setOrderForm] = useState({
+    items: [{ name: '', price: '', quantity: 1 }],
+  });
 
   const { data: users = [], isLoading, refetch } = useQuery({
     queryKey: ['auth-users'],
@@ -36,6 +54,128 @@ export default function UsersManager() {
       }
     },
   });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, newRole }) => {
+      const { data, error } = await supabase.functions.invoke('update-user-role', {
+        body: { userId, newRole },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'User role updated successfully',
+      });
+      queryClient.invalidateQueries(['auth-users']);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update user role',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleRoleToggle = async (userId, currentRole) => {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    updateRoleMutation.mutate({ userId, newRole });
+  };
+
+  const createOrderMutation = useMutation({
+    mutationFn: async ({ userId, userEmail, userName, items }) => {
+      const total = items.reduce((sum, item) => sum + (parseFloat(item.price) * parseInt(item.quantity)), 0);
+
+      const { data, error } = await supabase
+        .from('Order')
+        .insert([{
+          user_id: userId,
+          customer_email: userEmail,
+          customer_name: userName,
+          items: items,
+          total: total,
+          status: 'pending',
+          created_date: new Date().toISOString(),
+        }])
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Custom order created and assigned successfully',
+      });
+      setOrderDialogOpen(false);
+      setSelectedUser(null);
+      setOrderForm({ items: [{ name: '', price: '', quantity: 1 }] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create order',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleOpenOrderDialog = (user) => {
+    setSelectedUser(user);
+    setOrderDialogOpen(true);
+  };
+
+  const handleAddOrderItem = () => {
+    setOrderForm(prev => ({
+      ...prev,
+      items: [...prev.items, { name: '', price: '', quantity: 1 }],
+    }));
+  };
+
+  const handleRemoveOrderItem = (index) => {
+    setOrderForm(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleOrderItemChange = (index, field, value) => {
+    setOrderForm(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  const handleCreateOrder = () => {
+    if (!selectedUser) return;
+
+    const validItems = orderForm.items.filter(item =>
+      item.name && item.price && item.quantity
+    );
+
+    if (validItems.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please add at least one valid item',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    createOrderMutation.mutate({
+      userId: selectedUser.id,
+      userEmail: selectedUser.email,
+      userName: selectedUser.user_metadata?.full_name || selectedUser.user_metadata?.name || 'User',
+      items: validItems,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -133,22 +273,165 @@ export default function UsersManager() {
                   </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    window.open(`${createPageUrl('UserProfile')}?id=${user.id}`, '_blank');
-                  }}
-                  className="flex-shrink-0"
-                >
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  View
-                </Button>
+                <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRoleToggle(user.id, user.user_metadata?.role || 'user')}
+                    disabled={updateRoleMutation.isLoading}
+                    className="flex items-center"
+                  >
+                    {user.user_metadata?.role === 'admin' ? (
+                      <>
+                        <ShieldOff className="w-4 h-4 mr-1" />
+                        Remove Admin
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-4 h-4 mr-1" />
+                        Make Admin
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenOrderDialog(user)}
+                    className="flex items-center"
+                  >
+                    <Package className="w-4 h-4 mr-1" />
+                    Assign Order
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      window.open(`${createPageUrl('UserProfile')}?id=${user.id}`, '_blank');
+                    }}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    View
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Create Order Dialog */}
+      <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Assign Custom Order</DialogTitle>
+            <DialogDescription>
+              Create and assign a custom order to {selectedUser?.user_metadata?.full_name || selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Order Items</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddOrderItem}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Item
+                </Button>
+              </div>
+
+              {orderForm.items.map((item, index) => (
+                <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 rounded-lg">
+                  <div className="flex-1 space-y-2">
+                    <div>
+                      <Label htmlFor={`item-name-${index}`} className="text-xs">Item Name</Label>
+                      <Input
+                        id={`item-name-${index}`}
+                        placeholder="Product name"
+                        value={item.name}
+                        onChange={(e) => handleOrderItemChange(index, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor={`item-price-${index}`} className="text-xs">Price</Label>
+                        <Input
+                          id={`item-price-${index}`}
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={item.price}
+                          onChange={(e) => handleOrderItemChange(index, 'price', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`item-quantity-${index}`} className="text-xs">Quantity</Label>
+                        <Input
+                          id={`item-quantity-${index}`}
+                          type="number"
+                          min="1"
+                          placeholder="1"
+                          value={item.quantity}
+                          onChange={(e) => handleOrderItemChange(index, 'quantity', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  {orderForm.items.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveOrderItem(index)}
+                      className="mt-6"
+                    >
+                      <X className="w-4 h-4 text-red-600" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center text-lg font-semibold">
+                <span>Total:</span>
+                <span>
+                  ${orderForm.items
+                    .reduce((sum, item) => {
+                      const price = parseFloat(item.price) || 0;
+                      const quantity = parseInt(item.quantity) || 0;
+                      return sum + (price * quantity);
+                    }, 0)
+                    .toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOrderDialogOpen(false);
+                setSelectedUser(null);
+                setOrderForm({ items: [{ name: '', price: '', quantity: 1 }] });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateOrder}
+              disabled={createOrderMutation.isLoading}
+            >
+              {createOrderMutation.isLoading ? 'Creating...' : 'Create Order'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
