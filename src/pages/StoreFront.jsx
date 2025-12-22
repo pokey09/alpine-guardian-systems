@@ -84,7 +84,7 @@ export default function StoreFront() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('Product')
-        .select('id,name,price,image,description,rating,variations,is_subscription,subscription_interval,stripe_price_id,stripe_recurring_price_id');
+        .select('*');
       if (error) {
         throw new Error(error.message);
       }
