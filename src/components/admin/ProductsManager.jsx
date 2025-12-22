@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 export default function ProductsManager() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -52,6 +53,11 @@ export default function ProductsManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       resetForm();
+      setError(null);
+    },
+    onError: (err) => {
+      console.error('Create error:', err);
+      setError(`Failed to create product: ${err.message}`);
     },
   });
 
@@ -69,6 +75,11 @@ export default function ProductsManager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
       resetForm();
+      setError(null);
+    },
+    onError: (err) => {
+      console.error('Update error:', err);
+      setError(`Failed to update product: ${err.message}`);
     },
   });
 
@@ -101,6 +112,7 @@ export default function ProductsManager() {
     });
     setEditingProduct(null);
     setShowForm(false);
+    setError(null);
   };
 
   const handleEdit = (product) => {
@@ -121,12 +133,29 @@ export default function ProductsManager() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Build data object with only defined values
     const data = {
-      ...formData,
+      name: formData.name,
       price: parseFloat(formData.price),
+      description: formData.description,
       rating: parseInt(formData.rating),
-      subscription_interval: formData.is_subscription ? formData.subscription_interval || null : null,
+      is_subscription: formData.is_subscription,
+      subscription_interval: formData.is_subscription && formData.subscription_interval
+        ? formData.subscription_interval
+        : null,
     };
+
+    // Only add optional fields if they have values
+    if (formData.image && formData.image.trim()) {
+      data.image = formData.image;
+    }
+    if (formData.stripe_price_id && formData.stripe_price_id.trim()) {
+      data.stripe_price_id = formData.stripe_price_id;
+    }
+    if (formData.stripe_recurring_price_id && formData.stripe_recurring_price_id.trim()) {
+      data.stripe_recurring_price_id = formData.stripe_recurring_price_id;
+    }
 
     if (editingProduct) {
       updateMutation.mutate({ id: editingProduct.id, data });
@@ -155,6 +184,11 @@ export default function ProductsManager() {
               <X className="w-5 h-5" />
             </button>
           </div>
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
