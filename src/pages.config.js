@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import StoreFront from './pages/StoreFront';
 import AdminDashboard from './pages/AdminDashboard';
 import Checkout from './pages/Checkout';
+import CheckoutSuccess from './pages/CheckoutSuccess';
+import CheckoutCancel from './pages/CheckoutCancel';
 import UserProfile from './pages/UserProfile';
 import ProductDetail from './pages/ProductDetail';
 import OrderHistory from './pages/OrderHistory';
@@ -19,6 +21,8 @@ export const PAGES = {
     "StoreFront": StoreFront,
     "AdminDashboard": AdminDashboard,
     "Checkout": Checkout,
+    "CheckoutSuccess": CheckoutSuccess,
+    "CheckoutCancel": CheckoutCancel,
     "UserProfile": UserProfile,
     "ProductDetail": ProductDetail,
     "OrderHistory": OrderHistory,

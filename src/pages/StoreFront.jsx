@@ -15,7 +15,10 @@ import Cart from '../components/store/Cart';
 import QuickView from '../components/store/QuickView';
 
 export default function StoreFront() {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    const saved = localStorage.getItem('cart');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -28,28 +31,35 @@ export default function StoreFront() {
   const addToCart = (product) => {
     setCartItems((prev) => {
       const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { ...product, quantity: 1 }];
+      const updated = existing
+        ? prev.map((item) =>
+            item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          )
+        : [...prev, { ...product, quantity: 1 }];
+      localStorage.setItem('cart', JSON.stringify(updated));
+      return updated;
     });
     setIsCartOpen(true);
   };
 
   const updateQuantity = (id, quantity) => {
     if (quantity === 0) {
-      setCartItems((prev) => prev.filter((item) => item.id !== id));
-    } else {
-      setCartItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, quantity } : item))
-      );
+      removeItem(id);
+      return;
     }
+    setCartItems((prev) => {
+      const updated = prev.map((item) => (item.id === id ? { ...item, quantity } : item));
+      localStorage.setItem('cart', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const removeItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+    setCartItems((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      localStorage.setItem('cart', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleCheckout = async () => {

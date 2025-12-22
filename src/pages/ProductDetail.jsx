@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Star, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
+import { startCheckout } from '@/lib/checkout';
+import { useAuth } from '@/lib/AuthContext';
 import Header from '../components/landing/Header';
 import Footer from '../components/landing/Footer';
 import Cart from '../components/store/Cart';
@@ -13,10 +15,14 @@ import ImageGallery from '../components/store/ImageGallery';
 import ProductVariations from '../components/store/ProductVariations';
 
 export default function ProductDetail() {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    const saved = localStorage.getItem('cart');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedVariations, setSelectedVariations] = useState({});
   const [priceAdjustment, setPriceAdjustment] = useState(0);
+  const { user } = useAuth();
 
   const urlParams = new URLSearchParams(window.location.search);
   const productId = urlParams.get('id');
@@ -109,6 +115,31 @@ export default function ProductDetail() {
     });
   };
 
+  const handleCheckout = async () => {
+    try {
+      const lineItems = cartItems
+        .map((item) => {
+          const priceId = item.is_subscription ? item.stripe_recurring_price_id : item.stripe_price_id;
+          if (!priceId) return null;
+          return { priceId, quantity: item.quantity, isSubscription: !!item.is_subscription };
+        })
+        .filter(Boolean);
+
+      if (lineItems.length === 0) {
+        alert('No Stripe price IDs configured for items in your cart.');
+        return;
+      }
+
+      await startCheckout({
+        items: lineItems,
+        customerEmail: user?.email || undefined,
+      });
+    } catch (err) {
+      console.error('Stripe checkout error:', err);
+      alert(err.message || 'Unable to start checkout.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -197,6 +228,7 @@ export default function ProductDetail() {
         items={cartItems}
         onUpdateQuantity={updateQuantity}
         onRemove={removeItem}
+        onCheckout={handleCheckout}
       />
     </div>
   );
