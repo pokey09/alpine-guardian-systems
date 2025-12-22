@@ -14,4 +14,15 @@ export default defineConfig({
     },
   },
   appType: 'spa',
+  server: {
+    cors: {
+      origin: ['https://alpineguardiansys.com', 'http://localhost:5173', 'http://localhost:5174'],
+      credentials: true,
+    },
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'X-Requested-With, content-type, Authorization',
+    },
+  },
 });
