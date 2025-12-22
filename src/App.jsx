@@ -34,6 +34,17 @@ const AuthenticatedApp = () => {
           <MainPage />
         </LayoutWrapper>
       } />
+      {/* Stripe checkout routes with aliases */}
+      <Route path="/checkout/success" element={
+        <LayoutWrapper currentPageName="CheckoutSuccess">
+          {Pages.CheckoutSuccess ? <Pages.CheckoutSuccess /> : <PageNotFound />}
+        </LayoutWrapper>
+      } />
+      <Route path="/checkout/cancel" element={
+        <LayoutWrapper currentPageName="CheckoutCancel">
+          {Pages.CheckoutCancel ? <Pages.CheckoutCancel /> : <PageNotFound />}
+        </LayoutWrapper>
+      } />
       {Object.entries(Pages).map(([path, Page]) => (
         <Route
           key={path}
