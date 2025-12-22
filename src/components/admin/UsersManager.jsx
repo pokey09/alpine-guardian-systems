@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { User, ExternalLink, Shield, ShieldOff, Mail, Calendar, Package, Plus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../../utils';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Dialog,
   DialogContent,
