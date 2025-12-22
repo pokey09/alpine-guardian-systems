@@ -110,7 +110,6 @@ export default function UsersManager() {
       const { data, error } = await supabase
         .from('Order')
         .insert([{
-          user_id: userId,
           customer_email: userEmail,
           customer_name: userName,
           items: items,
