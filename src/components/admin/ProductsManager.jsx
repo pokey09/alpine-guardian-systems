@@ -5,14 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Upload, FileArchive } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function ProductsManager() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState(null);
+  const [templateFile, setTemplateFile] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -23,9 +26,12 @@ export default function ProductsManager() {
     stripe_price_id: '',
     stripe_recurring_price_id: '',
     rating: 5,
+    template_url: '',
+    is_one_click_host: false,
   });
 
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
@@ -109,7 +115,10 @@ export default function ProductsManager() {
       stripe_price_id: '',
       stripe_recurring_price_id: '',
       rating: 5,
+      template_url: '',
+      is_one_click_host: false,
     });
+    setTemplateFile(null);
     setEditingProduct(null);
     setShowForm(false);
     setError(null);
@@ -127,12 +136,75 @@ export default function ProductsManager() {
       stripe_price_id: product.stripe_price_id || '',
       stripe_recurring_price_id: product.stripe_recurring_price_id || '',
       rating: product.rating,
+      template_url: product.template_url || '',
+      is_one_click_host: product.is_one_click_host || false,
     });
+    setTemplateFile(null);
     setShowForm(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type (accept zip files)
+      if (!file.name.endsWith('.zip')) {
+        toast({
+          title: 'Invalid file type',
+          description: 'Please upload a .zip file',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setTemplateFile(file);
+    }
+  };
+
+  const uploadTemplateFile = async (file) => {
+    if (!file) return null;
+
+    setUploadingFile(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `templates/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('product-templates')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('product-templates')
+        .getPublicUrl(filePath);
+
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: 'Upload failed',
+        description: error.message || 'Failed to upload template file',
+        variant: 'destructive',
+      });
+      return null;
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Upload template file if one is selected
+    let templateUrl = formData.template_url;
+    if (templateFile) {
+      const uploadedUrl = await uploadTemplateFile(templateFile);
+      if (!uploadedUrl) {
+        setError('Failed to upload template file');
+        return;
+      }
+      templateUrl = uploadedUrl;
+    }
 
     // Build data object with only defined values
     const data = {
@@ -144,6 +216,7 @@ export default function ProductsManager() {
       subscription_interval: formData.is_subscription && formData.subscription_interval
         ? formData.subscription_interval
         : null,
+      is_one_click_host: formData.is_one_click_host,
     };
 
     // Only add optional fields if they have values
@@ -155,6 +228,9 @@ export default function ProductsManager() {
     }
     if (formData.stripe_recurring_price_id && formData.stripe_recurring_price_id.trim()) {
       data.stripe_recurring_price_id = formData.stripe_recurring_price_id;
+    }
+    if (templateUrl && templateUrl.trim()) {
+      data.template_url = templateUrl;
     }
 
     if (editingProduct) {
@@ -280,8 +356,62 @@ export default function ProductsManager() {
                 onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
               />
             </div>
-            <Button type="submit" className="bg-red-600 hover:bg-red-700">
-              {editingProduct ? 'Update' : 'Create'} Product
+
+            <div className="border-t border-slate-200 pt-4 mt-4">
+              <h4 className="font-semibold text-slate-900 mb-4">One-Click Host Settings</h4>
+
+              <div className="flex items-center space-x-3 mb-4">
+                <Checkbox
+                  id="is_one_click_host"
+                  checked={formData.is_one_click_host}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_one_click_host: !!checked })}
+                />
+                <Label htmlFor="is_one_click_host" className="mt-0">
+                  This is a One-Click Host product
+                </Label>
+              </div>
+
+              {formData.is_one_click_host && (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="template-file" className="flex items-center gap-2">
+                      <FileArchive className="w-4 h-4" />
+                      Template File (.zip)
+                    </Label>
+                    <div className="mt-2">
+                      <Input
+                        id="template-file"
+                        type="file"
+                        accept=".zip"
+                        onChange={handleFileChange}
+                        className="cursor-pointer"
+                      />
+                      {templateFile && (
+                        <p className="text-sm text-green-600 mt-2 flex items-center gap-2">
+                          <Upload className="w-4 h-4" />
+                          Selected: {templateFile.name}
+                        </p>
+                      )}
+                      {formData.template_url && !templateFile && (
+                        <p className="text-sm text-slate-600 mt-2">
+                          Current template: <a href={formData.template_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View file</a>
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Upload a .zip file containing the website template
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="bg-red-600 hover:bg-red-700"
+              disabled={uploadingFile}
+            >
+              {uploadingFile ? 'Uploading...' : editingProduct ? 'Update' : 'Create'} Product
             </Button>
           </form>
         </div>
@@ -296,12 +426,29 @@ export default function ProductsManager() {
             <div className="flex-1">
               <h3 className="font-semibold text-slate-900">{product.name}</h3>
               <p className="text-slate-600 text-sm">{product.description}</p>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <p className="text-red-600 font-bold">${product.price}</p>
                 {product.is_subscription && (
                   <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
                     {product.subscription_interval || 'subscription'}
                   </span>
+                )}
+                {product.is_one_click_host && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-100 flex items-center gap-1">
+                    <FileArchive className="w-3 h-3" />
+                    One-Click Host
+                  </span>
+                )}
+                {product.template_url && (
+                  <a
+                    href={product.template_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs px-2 py-1 rounded-full bg-green-50 text-green-700 border border-green-100 hover:bg-green-100 transition-colors flex items-center gap-1"
+                  >
+                    <Upload className="w-3 h-3" />
+                    Template File
+                  </a>
                 )}
               </div>
             </div>
